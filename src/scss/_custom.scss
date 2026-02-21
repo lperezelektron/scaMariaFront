@@ -15,3 +15,32 @@
 .select-week .calendar-row.current {
   cursor: pointer;
 }
+
+// Sidebar active pill style
+.sidebar .nav-link.active {
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+// Sidebar hover smooth
+.sidebar .nav-link {
+  transition: all .2s ease-in-out;
+}
+
+// Header subtle shadow
+.header {
+  box-shadow: 0 4px 12px rgba(0,0,0,.04);
+}
+
+// Cards more elegant
+.card {
+  border: none;
+  box-shadow: 0 8px 20px rgba(0,0,0,.04);
+}
+
+// Buttons more rounded
+.btn {
+  border-radius: 10px;
+}
+
+
