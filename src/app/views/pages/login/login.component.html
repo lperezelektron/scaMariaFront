@@ -3,54 +3,70 @@
     <c-row class="justify-content-center">
       <c-col lg="10" xl="8">
         <c-card-group>
+          <!-- FORM -->
           <c-card class="p-4">
             <c-card-body>
-              <form cForm>
-                <h1>Login</h1>
-                <p class="text-body-secondary">Sign In to your account</p>
+              <form cForm [formGroup]="form" (ngSubmit)="submit()">
+                <h1>El Limonero</h1>
+                <p class="text-body-secondary mb-4">Accede con tu usuario</p>
+
+                <c-alert color="danger" class="mb-3" *ngIf="errorMsg">
+                  {{ errorMsg }}
+                </c-alert>
+
                 <c-input-group class="mb-3">
                   <span cInputGroupText>
                     <svg cIcon name="cilUser"></svg>
                   </span>
-                  <input autoComplete="username" cFormControl placeholder="Username" />
+                  <input
+                    cFormControl
+                    formControlName="email"
+                    placeholder="Correo"
+                    autocomplete="username"
+                    inputmode="email"
+                  />
                 </c-input-group>
+
                 <c-input-group class="mb-4">
                   <span cInputGroupText>
                     <svg cIcon name="cilLockLocked"></svg>
                   </span>
                   <input
-                    autoComplete="current-password"
                     cFormControl
-                    placeholder="Password"
+                    formControlName="password"
+                    placeholder="Contraseña"
                     type="password"
+                    autocomplete="current-password"
                   />
                 </c-input-group>
-                <c-row>
+
+                <c-row class="align-items-center">
                   <c-col xs="6">
-                    <button cButton class="px-4" color="primary">
-                      Login
+                    <button cButton class="px-4" color="primary" type="submit" [disabled]="loading">
+                      <c-spinner
+                        *ngIf="loading"
+                        size="sm"
+                        class="me-2"
+                      ></c-spinner>
+                      Entrar
                     </button>
                   </c-col>
-                  <c-col class="text-right" xs="6">
-                    <button cButton class="px-0" color="link">
-                      Forgot password?
+
+                  <c-col class="text-end" xs="6">
+                    <button cButton class="px-0" color="link" type="button" disabled>
+                      ¿Olvidaste tu contraseña?
                     </button>
                   </c-col>
                 </c-row>
               </form>
             </c-card-body>
           </c-card>
+
+          <!-- SIDE BRAND PANEL (sin register) -->
           <c-card [ngStyle]="{'minWidth.%': 44}" class="text-white bg-primary py-5">
-            <c-card-body class="text-center">
+            <c-card-body class="text-center d-flex flex-column justify-content-center">
               <div>
-                <h2>Sign up</h2>
-                <p>
-                  Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
-                  tempor incididunt ut labore et dolore magna aliqua.
-                </p>
-                <button [active]="true" cButton class="mt-3" color="primary" routerLink="/register">
-                  Register Now!
-                </button>
+                <h2 class="mb-3">Punto de Venta</h2>
               </div>
             </c-card-body>
           </c-card>
