@@ -1,110 +1,114 @@
 import { INavData } from '@coreui/angular';
 
-export const navItems: INavData[] = [
+export interface INavDataPerm extends INavData {
+  permissions?: string[];
+  children?: INavDataPerm[];
+}
+
+export const navItems: INavDataPerm[] = [
   {
     name: 'Dashboard',
     url: '/dashboard',
     iconComponent: { name: 'cil-speedometer' },
   },
 
-  {
-    title: true,
-    name: 'Operación',
-  },
+  { title: true, name: 'Operación' },
+
   {
     name: 'Punto de Venta',
     url: '/pos',
     iconComponent: { name: 'cil-cart' },
+    permissions: ['ventas.ver', 'ventas.crear'],
   },
   {
     name: 'Caja',
-    url: '/settings/perifericos', // cámbialo luego a /cash si haces módulo caja
+    url: '/settings/perifericos',
     iconComponent: { name: 'cil-dollar' },
+    permissions: ['caja.ver', 'caja.movimiento', 'caja.corte'],
   },
 
-  {
-    title: true,
-    name: 'Catálogos',
-  },
+  { title: true, name: 'Catálogos' },
   {
     name: 'Catálogo',
     url: '/catalog',
     iconComponent: { name: 'cil-list' },
+    permissions: ['catalogos.ver'],
     children: [
       {
         name: 'Categorías',
         url: '/catalog/categorias',
         icon: 'nav-icon-bullet',
+        permissions: ['catalogos.ver'],
       },
       {
         name: 'Artículos',
         url: '/catalog/articulos',
         icon: 'nav-icon-bullet',
+        permissions: ['catalogos.ver'],
       },
     ],
   },
 
-  {
-    title: true,
-    name: 'Inventario',
-  },
+  { title: true, name: 'Inventario' },
   {
     name: 'Inventario',
     url: '/inventory',
     iconComponent: { name: 'cil-storage' },
+    permissions: ['inventario.ver'],
     children: [
       {
         name: 'Existencias',
         url: '/inventory/existencia',
         icon: 'nav-icon-bullet',
+        permissions: ['inventario.ver'],
       },
       {
         name: 'Precios',
         url: '/inventory/precios',
         icon: 'nav-icon-bullet',
+        permissions: ['inventario.ver'],
       },
       {
         name: 'Ajustes',
         url: '/inventory/ajustes',
         icon: 'nav-icon-bullet',
+        permissions: ['inventario.ajustar'],
       },
     ],
   },
 
-  {
-    title: true,
-    name: 'Configuración',
-  },
+  { title: true, name: 'Configuración' },
   {
     name: 'Configuración',
     url: '/settings',
     iconComponent: { name: 'cil-settings' },
+    permissions: ['catalogos.ver'], // temporal hasta tener settings.*
     children: [
       {
         name: 'Almacenes',
         url: '/settings/almacenes',
         icon: 'nav-icon-bullet',
+        permissions: ['catalogos.ver'],
       },
       {
         name: 'Periféricos',
         url: '/settings/perifericos',
         icon: 'nav-icon-bullet',
+        permissions: ['catalogos.ver'],
       },
       {
         name: 'Impuestos',
         url: '/settings/impuestos',
         icon: 'nav-icon-bullet',
+        permissions: ['catalogos.ver'],
       },
     ],
   },
 
-  {
-    title: true,
-    name: 'Sesión',
-  },
+  { title: true, name: 'Sesión' },
   {
     name: 'Cerrar sesión',
-    url: '/login', // luego lo haremos botón real que llame logout
+    url: '/logout',
     iconComponent: { name: 'cil-account-logout' },
   },
 ];
