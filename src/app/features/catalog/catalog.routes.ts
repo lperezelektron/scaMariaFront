@@ -6,21 +6,23 @@ export const routes: Routes = [
     children: [
       {
         path: 'categorias',
+        data: { title: 'Categorías' },
         loadComponent: () =>
-          import('./pages/categorias/categorias.component')
-            .then(m => m.CategoriasComponent)
+          import('./pages/categorias/categorias.component').then(
+            (m) => m.CategoriasComponent,
+          ),
       },
       {
         path: 'articulos',
-        loadComponent: () =>
-          import('./pages/articulos/articulos.component')
-            .then(m => m.ArticulosComponent)
+        data: { title: 'Artículos' },
+        loadChildren: () =>
+          import('./articulos/articulos.routes').then((m) => m.routes),
       },
       {
         path: '',
         redirectTo: 'categorias',
-        pathMatch: 'full'
-      }
-    ]
-  }
+        pathMatch: 'full',
+      },
+    ],
+  },
 ];
