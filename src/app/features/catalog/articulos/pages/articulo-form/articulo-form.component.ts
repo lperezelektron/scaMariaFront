@@ -1,0 +1,166 @@
+import { CommonModule } from '@angular/common';
+import { Component, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Categoria } from '../../data/articulos.models';
+import { ArticulosService } from '../../data/articulos.service';
+import { CategoriasService } from '../../data/categorias.service';
+
+type FieldErrors = Record<string, string[]>;
+
+@Component({
+  selector: 'app-articulo-form',
+  standalone: true,
+  imports: [CommonModule, RouterLink, ReactiveFormsModule],
+  templateUrl: './articulo-form.component.html',
+  styleUrl: './articulo-form.component.scss',
+})
+export class ArticuloFormComponent {
+  categorias = signal<Categoria[]>([]);
+  loading = signal(false);
+  saving = signal(false);
+
+  // si hay id => edit
+  articuloId: number | null = null;
+  mode: 'create' | 'edit' = 'create';
+
+  // errores 422 por campo
+  fieldErrors = signal<FieldErrors>({});
+
+  form = this.fb.group({
+    nombre: ['', [Validators.required, Validators.maxLength(50)]],
+    nombre_corto: ['', [Validators.required, Validators.maxLength(50)]],
+    unidad: ['', [Validators.required, Validators.maxLength(5)]],
+    categoria_id: [null as number | null, [Validators.required]],
+    activo: [true],
+  });
+
+  constructor(
+    private fb: FormBuilder,
+    private route: ActivatedRoute,
+    private router: Router,
+    private articulosSvc: ArticulosService,
+    private categoriasSvc: CategoriasService,
+  ) {
+    const idParam = this.route.snapshot.paramMap.get('id');
+    this.articuloId = idParam ? Number(idParam) : null;
+    this.mode = this.articuloId ? 'edit' : 'create';
+
+    this.loadCategorias();
+    if (this.mode === 'edit') this.loadArticulo();
+  }
+
+  get title(): string {
+    return this.mode === 'create' ? 'Nuevo artículo' : 'Editar artículo';
+  }
+
+  private loadCategorias() {
+    this.categoriasSvc.list().subscribe((res: any) => {
+      const data = Array.isArray(res) ? res : (res?.data ?? []);
+      this.categorias.set(data);
+    });
+  }
+
+  private loadArticulo() {
+    if (!this.articuloId) return;
+    this.loading.set(true);
+
+    this.articulosSvc.get(this.articuloId).subscribe({
+      next: (res: any) => {
+        const a = res?.articulo ?? res; // por si cambia la forma
+        this.form.patchValue({
+          nombre: a?.nombre ?? '',
+          nombre_corto: a?.nombre_corto ?? '',
+          unidad: a?.unidad ?? '',
+          categoria_id: a?.categoria_id ?? null,
+          activo: !!a?.activo,
+        });
+        this.fieldErrors.set({});
+        this.loading.set(false);
+      },
+      error: () => {
+        this.loading.set(false);
+        this.router.navigateByUrl('/404');
+      },
+    });
+  }
+
+  // helpers para errores
+  hasError(field: string): boolean {
+    const c = this.form.get(field);
+    return !!c && c.touched && c.invalid;
+  }
+
+  errorText(field: string): string | null {
+    const c = this.form.get(field);
+    if (!c || !c.touched || !c.errors) return null;
+
+    if (c.errors['required']) return 'Este campo es requerido.';
+    if (c.errors['maxlength']) return 'Excede la longitud máxima.';
+    return 'Campo inválido.';
+  }
+
+  backendError(field: string): string | null {
+    const err = this.fieldErrors()[field];
+    return err?.[0] ?? null;
+  }
+
+  submit() {
+    this.fieldErrors.set({});
+    this.form.markAllAsTouched();
+    if (this.form.invalid) return;
+
+    this.saving.set(true);
+
+    const raw = this.form.getRawValue();
+
+    const payload = {
+      nombre: raw.nombre ?? '',
+      nombre_corto: raw.nombre_corto ?? '',
+      unidad: raw.unidad ?? '',
+      categoria_id: Number(raw.categoria_id),
+      activo: !!raw.activo,
+    };
+
+    const req =
+      this.mode === 'create'
+        ? this.articulosSvc.create(payload)
+        : this.articulosSvc.update(this.articuloId!, payload);
+
+    req.subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.router.navigate(['/catalog/articulos'], { queryParams: this.route.snapshot.queryParams });
+      },
+      error: (err) => {
+        this.saving.set(false);
+
+        // Laravel 422
+        if (err?.status === 422 && err?.error?.errors) {
+          this.fieldErrors.set(err.error.errors as FieldErrors);
+          return;
+        }
+
+        alert(err?.error?.message ?? 'Ocurrió un error al guardar.');
+      },
+    });
+  }
+
+  isInvalid(field: string): boolean {
+    const c = this.form.get(field);
+    const backend = !!this.fieldErrors()[field]?.length;
+    return (!!c && c.touched && c.invalid) || backend;
+  }
+
+  clearBackendError(field: string) {
+    const errs = { ...this.fieldErrors() };
+    if (errs[field]) {
+      delete errs[field];
+      this.fieldErrors.set(errs);
+    }
+  }
+
+  cancel() {
+    this.router.navigate(['/catalog/articulos'], { queryParams: this.route.snapshot.queryParams });
+  }
+}

@@ -1,0 +1,80 @@
+<div class="form-page">
+
+  <div class="form-header">
+    <div>
+      <h2 class="mb-1">{{ title }}</h2>
+      <small class="text-muted">Catálogo / Artículos</small>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-outline-secondary" (click)="cancel()" [disabled]="saving()">
+        Cancelar
+      </button>
+      <button type="button" class="btn btn-primary" (click)="submit()" [disabled]="saving()">
+        {{ saving() ? 'Guardando...' : 'Guardar' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="card-like" *ngIf="!loading(); else loadingTpl">
+    <form (ngSubmit)="submit()" [formGroup]="form" class="row g-3">
+
+      <div class="col-12 col-md-6">
+        <label class="form-label">Nombre</label>
+        <input class="form-control" formControlName="nombre" [class.is-invalid]="isInvalid('nombre')" (input)="clearBackendError('nombre')" />
+        <div class="invalid-hint" *ngIf="hasError('nombre')">{{ errorText('nombre') }}</div>
+        <div class="invalid-hint" *ngIf="backendError('nombre')">{{ backendError('nombre') }}</div>
+      </div>
+
+      <div class="col-12 col-md-6">
+        <label class="form-label">Nombre corto</label>
+        <input class="form-control" formControlName="nombre_corto" [class.is-invalid]="isInvalid('nombre_corto')" (input)="clearBackendError('nombre_corto')" />
+        <div class="invalid-hint" *ngIf="hasError('nombre_corto')">{{ errorText('nombre_corto') }}</div>
+        <div class="invalid-hint" *ngIf="backendError('nombre_corto')">{{ backendError('nombre_corto') }}</div>
+      </div>
+
+      <div class="col-12 col-md-4">
+        <label class="form-label">Unidad</label>
+        <input class="form-control" formControlName="unidad" maxlength="5" [class.is-invalid]="isInvalid('unidad')" (input)="clearBackendError('unidad')" />
+        <div class="invalid-hint" *ngIf="hasError('unidad')">{{ errorText('unidad') }}</div>
+        <div class="invalid-hint" *ngIf="backendError('unidad')">{{ backendError('unidad') }}</div>
+      </div>
+
+      <div class="col-12 col-md-6">
+        <label class="form-label">Categoría</label>
+        <select class="form-select" formControlName="categoria_id" [class.is-invalid]="isInvalid('categoria_id')" (input)="clearBackendError('categoria_id')">
+          <option [ngValue]="null">Selecciona...</option>
+          <option *ngFor="let c of categorias()" [ngValue]="c.id">{{ c.descripcion }}</option>
+        </select>
+        <div class="invalid-hint" *ngIf="hasError('categoria_id')">Selecciona una categoría.</div>
+        <div class="invalid-hint" *ngIf="backendError('categoria_id')">{{ backendError('categoria_id') }}</div>
+      </div>
+
+      <div class="col-12 col-md-2 d-flex align-items-end">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" formControlName="activo" id="activoSwitch" />
+          <label class="form-check-label" for="activoSwitch">Activo</label>
+        </div>
+      </div>
+
+      <div class="col-12">
+        <hr class="my-2" />
+        <div class="d-flex gap-2 justify-content-end">
+          <button type="button" class="btn btn-outline-secondary" (click)="cancel()" [disabled]="saving()">
+            Cancelar
+          </button>
+          <button type="submit" class="btn btn-primary" [disabled]="saving()">
+            {{ saving() ? 'Guardando...' : 'Guardar' }}
+          </button>
+        </div>
+      </div>
+
+    </form>
+  </div>
+
+  <ng-template #loadingTpl>
+    <div class="card-like">
+      <div class="py-4 text-center text-muted">Cargando...</div>
+    </div>
+  </ng-template>
+</div>
