@@ -9,8 +9,8 @@ export interface Cliente {
 
 export interface VentaMini {
   id: number;
-  fecha: string;                 
-  total: number | string;        
+  fecha: string; // date
+  total: number | string; // decimal:2
   credito?: boolean;
 }
 
@@ -19,8 +19,8 @@ export interface CtaXCobrar {
   venta_id: number;
   cliente_id: number;
 
-  fecha: string;
-  vencimiento: string;
+  fecha: string;       // date
+  vencimiento: string; // date
 
   importe: number | string;
   saldo: number | string;
