@@ -1,0 +1,148 @@
+<div class="form-page">
+
+  <div class="form-header">
+    <div>
+      <h2 class="m-0">{{ title }}</h2>
+
+      <div class="text-muted mt-1" *ngIf="mode === 'edit'">
+        <small *ngIf="totalCompras() !== null">Total compras: {{ totalCompras() | number:'1.2-2' }}</small>
+        <span class="mx-2" *ngIf="totalCompras() !== null && saldoPendiente() !== null">•</span>
+        <small *ngIf="saldoPendiente() !== null">Saldo pendiente: {{ saldoPendiente() | number:'1.2-2' }}</small>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-outline-secondary" (click)="cancel()" [disabled]="saving()">
+        Cancelar
+      </button>
+      <button type="button" class="btn btn-primary" (click)="submit()" [disabled]="saving()">
+        {{ saving() ? 'Guardando...' : 'Guardar' }}
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="loading()" class="alert alert-info">
+    Cargando...
+  </div>
+
+  <div *ngIf="!loading()" class="tabs-bar">
+    <button type="button" class="tab-btn" [class.active]="tab() === 'general'" (click)="setTab('general')">
+      General
+    </button>
+
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="tab() === 'estadoCuenta'"
+      [disabled]="mode !== 'edit'"
+      (click)="setTab('estadoCuenta')"
+    >
+      Estado de cuenta
+    </button>
+  </div>
+
+  <!-- TAB: GENERAL -->
+  <form *ngIf="!loading() && tab() === 'general'" [formGroup]="form" class="card form-card" (ngSubmit)="submit()">
+    <div class="card-body">
+      <div class="row g-3">
+
+        <div class="col-12 col-lg-8">
+          <label class="form-label">Nombre</label>
+          <input class="form-control" formControlName="nombre"
+                 [class.is-invalid]="isInvalid('nombre')"
+                 (input)="clearBackendError('nombre')" maxlength="255" />
+          <div class="invalid-feedback" *ngIf="errorText('nombre')">{{ errorText('nombre') }}</div>
+          <div class="invalid-feedback" *ngIf="backendError('nombre')">{{ backendError('nombre') }}</div>
+        </div>
+
+        <div class="col-12 col-lg-4">
+          <label class="form-label">RFC</label>
+          <input class="form-control" formControlName="rfc"
+                 [class.is-invalid]="isInvalid('rfc')"
+                 (input)="clearBackendError('rfc')" maxlength="20" />
+          <div class="invalid-feedback" *ngIf="errorText('rfc')">{{ errorText('rfc') }}</div>
+          <div class="invalid-feedback" *ngIf="backendError('rfc')">{{ backendError('rfc') }}</div>
+        </div>
+
+        <div class="col-12">
+          <label class="form-label">Dirección</label>
+          <input class="form-control" formControlName="direccion"
+                 [class.is-invalid]="isInvalid('direccion')"
+                 (input)="clearBackendError('direccion')" maxlength="255" />
+          <div class="invalid-feedback" *ngIf="errorText('direccion')">{{ errorText('direccion') }}</div>
+          <div class="invalid-feedback" *ngIf="backendError('direccion')">{{ backendError('direccion') }}</div>
+        </div>
+
+        <div class="col-12 col-lg-4">
+          <label class="form-label">Ciudad</label>
+          <input class="form-control" formControlName="ciudad"
+                 [class.is-invalid]="isInvalid('ciudad')"
+                 (input)="clearBackendError('ciudad')" maxlength="255" />
+          <div class="invalid-feedback" *ngIf="errorText('ciudad')">{{ errorText('ciudad') }}</div>
+          <div class="invalid-feedback" *ngIf="backendError('ciudad')">{{ backendError('ciudad') }}</div>
+        </div>
+
+        <div class="col-12 col-lg-4">
+          <label class="form-label">Teléfono</label>
+          <input class="form-control" formControlName="telefono"
+                 [class.is-invalid]="isInvalid('telefono')"
+                 (input)="clearBackendError('telefono')" maxlength="20" />
+          <div class="invalid-feedback" *ngIf="errorText('telefono')">{{ errorText('telefono') }}</div>
+          <div class="invalid-feedback" *ngIf="backendError('telefono')">{{ backendError('telefono') }}</div>
+        </div>
+
+        <div class="col-12 col-lg-2">
+          <label class="form-label">Días crédito</label>
+          <input type="number" class="form-control" formControlName="dias_credito"
+                 [class.is-invalid]="isInvalid('dias_credito')"
+                 (input)="clearBackendError('dias_credito')" min="0" />
+          <div class="invalid-feedback" *ngIf="errorText('dias_credito')">{{ errorText('dias_credito') }}</div>
+          <div class="invalid-feedback" *ngIf="backendError('dias_credito')">{{ backendError('dias_credito') }}</div>
+        </div>
+
+        <div class="col-12 col-lg-2 d-flex align-items-end">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" formControlName="activo" />
+            <label class="form-check-label">Activo</label>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </form>
+
+  <!-- TAB: ESTADO DE CUENTA -->
+  <div *ngIf="!loading() && tab() === 'estadoCuenta'" class="card form-card">
+    <div class="card-body">
+
+      <div class="ec-toolbar">
+        <div class="text-muted">
+          <strong>Saldo pendiente:</strong> {{ ecSaldo() | number:'1.2-2' }}
+        </div>
+
+        <button type="button" class="btn btn-outline-secondary ms-auto"
+                (click)="loadEstadoCuenta()" [disabled]="ecLoading()">
+          {{ ecLoading() ? 'Cargando...' : 'Refrescar' }}
+        </button>
+      </div>
+
+      <div *ngIf="ecError()" class="alert alert-danger mt-3">
+        {{ ecError() }}
+      </div>
+
+      <div class="mt-3">
+        <ag-grid-angular
+          class="ag-theme-alpine"
+          [theme]="'legacy'"
+          style="width: 100%; height: 520px;"
+          [rowData]="ecRows()"
+          [columnDefs]="ecColDefs"
+          [defaultColDef]="ecDefaultColDef"
+          [animateRows]="true"
+        ></ag-grid-angular>
+      </div>
+
+    </div>
+  </div>
+
+</div>

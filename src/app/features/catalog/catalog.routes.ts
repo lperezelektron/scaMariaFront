@@ -7,16 +7,26 @@ export const routes: Routes = [
       {
         path: 'categorias',
         data: { title: 'Categorías' },
-        loadComponent: () =>
-          import('./pages/categorias/categorias.component').then(
-            (m) => m.CategoriasComponent,
-          ),
+        loadChildren: () =>
+          import('./categorias/categorias.routes').then((m) => m.routes),
       },
       {
         path: 'articulos',
         data: { title: 'Artículos' },
         loadChildren: () =>
           import('./articulos/articulos.routes').then((m) => m.routes),
+      },
+      {
+        path: 'proveedores',
+        data: { title: 'Proveedores' },
+        loadChildren: () =>
+          import('./proveedores/proveedores.routes').then((m) => m.routes),
+      },
+      {
+        path: 'clientes',
+        data: { title: 'Clientes' },
+        loadChildren: () =>
+          import('./clientes/clientes.routes').then((m) => m.routes),
       },
       {
         path: '',
