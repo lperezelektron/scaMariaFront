@@ -5,28 +5,28 @@ export const routes: Routes = [
   {
     path: '',
     canMatch: [permissionMatch('catalogos.ver')],
-    data: { title: 'Listado de Artículos' },
+    data: { title: 'Listado de Clientes' },
     loadComponent: () =>
-      import('./pages/articulos-list/articulos-list.component').then(
-        (m) => m.ArticulosListComponent,
+      import('./pages/clientes-list/clientes-list.component').then(
+        (m) => m.ClientesListComponent,
       ),
   },
   {
     path: 'nuevo',
     canMatch: [permissionMatch('catalogos.crear')],
-    data: { title: 'Nuevo Artículo' },
+    data: { title: 'Nuevo Cliente' },
     loadComponent: () =>
-      import('./pages/articulo-form/articulo-form.component').then(
-        (m) => m.ArticuloFormComponent,
+      import('./pages/cliente-form/cliente-form.component').then(
+        (m) => m.ClienteFormComponent,
       ),
   },
   {
     path: ':id/editar',
     canMatch: [permissionMatch('catalogos.editar')],
-    data: { title: 'Editar Artículo' },
+    data: { title: 'Editar Cliente' },
     loadComponent: () =>
-      import('./pages/articulo-form/articulo-form.component').then(
-        (m) => m.ArticuloFormComponent,
+      import('./pages/cliente-form/cliente-form.component').then(
+        (m) => m.ClienteFormComponent,
       ),
   },
 ];

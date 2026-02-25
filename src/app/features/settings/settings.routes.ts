@@ -8,9 +8,8 @@ export const routes: Routes = [
       {
         path: 'almacenes',
         data: { title: 'Almacenes' },
-        loadComponent: () =>
-          import('./pages/almacenes/almacenes.component')
-            .then(m => m.AlmacenesComponent)
+        loadChildren: () =>
+          import('./pages/almacenes/almacenes.routes').then((m) => m.routes),
       },
       {
         path: 'perifericos',
