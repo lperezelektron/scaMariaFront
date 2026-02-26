@@ -1,0 +1,82 @@
+<div class="crud-page">
+
+  <div class="crud-header">
+    <div class="crud-title">
+      <h2>Compras</h2>
+      <small>{{ total() }} resultados</small>
+    </div>
+
+    <div class="crud-actions">
+      <button type="button" class="btn btn-outline-secondary" (click)="reload()">Refrescar</button>
+
+      <button type="button" class="btn btn-primary" (click)="goNew()" *hasPermission="'catalogos.crear'">
+        Nueva
+      </button>
+
+      <button type="button" class="btn btn-outline-info" (click)="goView()"
+              [disabled]="!selectedId()" *hasPermission="'catalogos.ver'">
+        Ver
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="banner() as b" class="alert"
+       [class.alert-success]="b.type === 'success'"
+       [class.alert-danger]="b.type === 'danger'"
+       [class.alert-info]="b.type === 'info'">
+    {{ b.text }}
+  </div>
+
+  <div class="crud-toolbar">
+    <select class="form-select" [ngModel]="proveedorId()" (ngModelChange)="proveedorId.set(toNumber($event))">
+      <option [ngValue]="null">Todos los proveedores</option>
+      <option *ngFor="let p of proveedores()" [ngValue]="p.id">{{ p.nombre }}</option>
+    </select>
+
+    <input type="date" class="form-control" [ngModel]="fechaInicio()" (ngModelChange)="fechaInicio.set($event || null)" />
+    <input type="date" class="form-control" [ngModel]="fechaFin()" (ngModelChange)="fechaFin.set($event || null)" />
+
+    <input type="number" class="form-control" placeholder="Mes" min="1" max="12"
+           [ngModel]="mes()" (ngModelChange)="mes.set(toNumber($event))" style="max-width: 110px;" />
+    <input type="number" class="form-control" placeholder="Año" min="2000" max="2100"
+           [ngModel]="anio()" (ngModelChange)="anio.set(toNumber($event))" style="max-width: 120px;" />
+
+    <button type="button" class="btn btn-outline-primary" (click)="applyFilters()">Aplicar</button>
+    <button type="button" class="btn btn-outline-secondary" (click)="clearFilters()">Limpiar</button>
+
+    <select class="form-select" [value]="pageSize()" (change)="onPageSize($any($event.target).value)">
+      <option [value]="10">10</option>
+      <option [value]="25">25</option>
+      <option [value]="50">50</option>
+      <option [value]="100">100</option>
+    </select>
+
+    <div class="crud-pagination">
+      <button type="button" class="btn btn-outline-secondary" (click)="prevPage()" [disabled]="page() <= 1">
+        Anterior
+      </button>
+      <span class="crud-pageinfo">Página {{ page() }} / {{ lastPage() }}</span>
+      <button type="button" class="btn btn-outline-secondary" (click)="nextPage()" [disabled]="page() >= lastPage()">
+        Siguiente
+      </button>
+    </div>
+  </div>
+
+  <div class="crud-grid">
+    <ag-grid-angular
+      class="ag-theme-alpine"
+      [theme]="'legacy'"
+      style="width: 100%; height: 560px;"
+      [rowData]="rows()"
+      [columnDefs]="colDefs"
+      [defaultColDef]="defaultColDef"
+      [rowSelection]="'single'"
+      [animateRows]="true"
+      [overlayNoRowsTemplate]="overlayNoRowsTemplate"
+      [overlayLoadingTemplate]="overlayLoadingTemplate"
+      (gridReady)="onGridReady($event)"
+      (selectionChanged)="onSelectionChanged($event)"
+    ></ag-grid-angular>
+  </div>
+
+</div>

@@ -1,0 +1,224 @@
+<div class="form-page">
+
+  <div class="form-header">
+    <div>
+      <h2 class="m-0">{{ title }}</h2>
+      <small class="text-muted" *ngIf="mode === 'view' && compra()">
+        Referencia: <strong>{{ compra()!.referencia }}</strong> • Fecha: <strong>{{ compra()!.fecha }}</strong>
+      </small>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-outline-secondary" (click)="cancel()" [disabled]="saving() || cancelling()">
+        Volver
+      </button>
+
+      <button type="button" class="btn btn-danger" *ngIf="mode === 'view'"
+              (click)="cancelarCompra()" [disabled]="cancelling()">
+        {{ cancelling() ? 'Cancelando...' : 'Cancelar compra' }}
+      </button>
+
+      <button type="button" class="btn btn-primary" *ngIf="mode === 'create'"
+              (click)="submit()" [disabled]="saving()">
+        {{ saving() ? 'Guardando...' : 'Guardar' }}
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="loading()" class="alert alert-info">Cargando...</div>
+
+  <!-- VIEW MODE -->
+  <div *ngIf="!loading() && mode === 'view' && compra() as c" class="card form-card">
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-12 col-lg-4">
+          <div class="label">Proveedor</div>
+          <div class="value">{{ c.proveedor?.nombre ?? '-' }}</div>
+        </div>
+        <div class="col-12 col-lg-4">
+          <div class="label">Usuario</div>
+          <div class="value">{{ c.user?.name ?? c.user?.nombre ?? '-' }}</div>
+        </div>
+        <div class="col-12 col-lg-4">
+          <div class="label">Total</div>
+          <div class="value">{{ c.total }}</div>
+        </div>
+      </div>
+
+      <hr class="my-3" />
+
+      <h6 class="mb-2">Detalles</h6>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>Lote</th>
+              <th>Artículo</th>
+              <th>Variedad</th>
+              <th class="text-end">Cantidad</th>
+              <th class="text-end">Costo</th>
+              <th class="text-end">Imp.</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let d of (c.detalles ?? [])">
+              <td>{{ d.lote ?? '-' }}</td>
+              <td>{{ d.articulo?.nombre ?? d.articulo_id }}</td>
+              <td>{{ d.variedad }}</td>
+              <td class="text-end">{{ d.cantidad }}</td>
+              <td class="text-end">{{ d.costo }}</td>
+              <td class="text-end">{{ d.impuestos ?? 0 }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- CREATE MODE -->
+  <form *ngIf="!loading() && mode === 'create'" class="card form-card" [formGroup]="form">
+    <div class="card-body">
+      <div class="row g-3">
+
+        <div class="col-12 col-lg-3">
+          <label class="form-label">Fecha</label>
+          <input type="date" class="form-control" formControlName="fecha" />
+          <div class="text-danger small" *ngIf="backendError('fecha')">{{ backendError('fecha') }}</div>
+        </div>
+
+        <div class="col-12 col-lg-3">
+          <label class="form-label">Referencia</label>
+          <input class="form-control" formControlName="referencia" placeholder="(opcional)" />
+          <div class="text-danger small" *ngIf="backendError('referencia')">{{ backendError('referencia') }}</div>
+        </div>
+
+        <div class="col-12 col-lg-3">
+          <label class="form-label">Proveedor</label>
+          <select class="form-select" formControlName="proveedor_id">
+            <option [ngValue]="null">Selecciona</option>
+            <option *ngFor="let p of proveedores()" [ngValue]="p.id">{{ p.nombre }}</option>
+          </select>
+          <div class="text-danger small" *ngIf="backendError('proveedor_id')">{{ backendError('proveedor_id') }}</div>
+        </div>
+
+        <div class="col-12 col-lg-3">
+          <label class="form-label">Almacén</label>
+          <select class="form-select" formControlName="almacen_id">
+            <option [ngValue]="null">Selecciona</option>
+            <option *ngFor="let a of almacenes()" [ngValue]="a.id">{{ a.descripcion }}</option>
+          </select>
+          <div class="text-danger small" *ngIf="backendError('almacen_id')">{{ backendError('almacen_id') }}</div>
+        </div>
+
+        <div class="col-12 col-lg-3 d-flex align-items-end">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" formControlName="credito" />
+            <label class="form-check-label">Crédito</label>
+          </div>
+        </div>
+
+        <div class="col-12 col-lg-3" *ngIf="form.get('credito')?.value">
+          <label class="form-label">Días crédito</label>
+          <input type="number" class="form-control" formControlName="dias_credito" min="1" />
+          <div class="text-danger small" *ngIf="backendError('dias_credito')">{{ backendError('dias_credito') }}</div>
+        </div>
+
+        <div class="col-12 col-lg-3" *ngIf="!form.get('credito')?.value">
+          <label class="form-label">Forma de pago</label>
+          <select class="form-select" formControlName="f_pago_id">
+            <option [ngValue]="null">Selecciona</option>
+            <option *ngFor="let f of formasPago()" [ngValue]="f.id">{{ f.descripcion }}</option>
+          </select>
+          <div class="text-danger small" *ngIf="backendError('f_pago_id')">{{ backendError('f_pago_id') }}</div>
+        </div>
+
+      </div>
+
+      <hr class="my-3" />
+
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <h6 class="m-0">Detalles</h6>
+        <button type="button" class="btn btn-outline-primary btn-sm" (click)="addDetalle()">
+          + Agregar
+        </button>
+      </div>
+
+      <div class="details-editor">
+        <div class="detail-row" *ngFor="let g of detalles.controls; let i = index" [formGroupName]="i">
+          <div class="row g-2 align-items-end">
+            <div class="col-12 col-lg-3">
+              <label class="form-label">Artículo</label>
+              <select class="form-select" formControlName="articulo_id">
+                <option [ngValue]="null">Selecciona</option>
+                <option *ngFor="let a of articulos()" [ngValue]="a.id">
+                  {{ a.nombre ?? a.descripcion }}
+                </option>
+              </select>
+              <div class="text-danger small" *ngIf="backendError('detalles.'+i+'.articulo_id')">
+                {{ backendError('detalles.'+i+'.articulo_id') }}
+              </div>
+            </div>
+
+            <div class="col-12 col-lg-2">
+              <label class="form-label">Variedad</label>
+              <input class="form-control" formControlName="variedad" />
+              <div class="text-danger small" *ngIf="backendError('detalles.'+i+'.variedad')">
+                {{ backendError('detalles.'+i+'.variedad') }}
+              </div>
+            </div>
+
+            <div class="col-6 col-lg-1">
+              <label class="form-label">Cant.</label>
+              <input type="number" class="form-control" formControlName="cantidad" min="0.001" step="0.001" />
+            </div>
+
+            <div class="col-6 col-lg-1">
+              <label class="form-label">Emp.</label>
+              <input type="number" class="form-control" formControlName="empaque" min="0" step="0.01" />
+            </div>
+
+            <div class="col-6 col-lg-1">
+              <label class="form-label">Costo</label>
+              <input type="number" class="form-control" formControlName="costo" min="0" step="0.01" />
+            </div>
+
+            <div class="col-6 col-lg-1">
+              <label class="form-label">Imp.</label>
+              <input type="number" class="form-control" formControlName="impuestos" min="0" step="0.01" />
+            </div>
+
+            <div class="col-6 col-lg-1">
+              <label class="form-label">Precio</label>
+              <input type="number" class="form-control" formControlName="precio" min="0" step="0.01" />
+            </div>
+
+            <div class="col-6 col-lg-1">
+              <label class="form-label">Precio min</label>
+              <input type="number" class="form-control" formControlName="precio_min" min="0" step="0.01" />
+            </div>
+
+            <div class="col-12 col-lg-1 d-flex justify-content-end">
+              <button type="button" class="btn btn-outline-danger btn-sm" (click)="removeDetalle(i)" [disabled]="detalles.length <= 1">
+                Quitar
+              </button>
+            </div>
+          </div>
+
+          <div class="text-danger small mt-1" *ngIf="backendError('detalles.'+i)">
+            {{ backendError('detalles.'+i) }}
+          </div>
+
+          <hr class="my-3" *ngIf="i < detalles.length - 1" />
+        </div>
+      </div>
+
+      <div class="totals-bar mt-3">
+        <div class="totals-item"><span>Subtotal</span><strong>{{ form.get('subtotal')?.value | number:'1.2-2' }}</strong></div>
+        <div class="totals-item"><span>Impuestos</span><strong>{{ form.get('impuestos')?.value | number:'1.2-2' }}</strong></div>
+        <div class="totals-item total"><span>Total</span><strong>{{ form.get('total')?.value | number:'1.2-2' }}</strong></div>
+      </div>
+
+    </div>
+  </form>
+
+</div>
