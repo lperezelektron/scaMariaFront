@@ -1,336 +1,352 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, signal } from '@angular/core';
-import { FormArray, FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { AgGridAngular } from 'ag-grid-angular';
-import { ColDef } from 'ag-grid-community';
+import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
+import {
+  ButtonDirective,
+  CardBodyComponent,
+  CardComponent,
+  CardHeaderComponent,
+  ColComponent,
+  RowComponent,
+  SpinnerComponent,
+  BadgeComponent,
+} from '@coreui/angular';
 import { ComprasService } from '../../data/compras.service';
-import { Compra, CompraDetalle, CompraStorePayload } from '../../data/compras.models';
+import { ProveedoresService } from '../../../proveedores/data/proveedores.service';
+import { AlmacenesService } from '../../../../settings/pages/almacenes/data/almacenes.service';
+import { ArticulosService } from '../../../articulos/data/articulos.service';
+import { FormasPagoService } from '../../../formas-pago/data/formas-pago.service';
+import { Proveedor } from '../../../proveedores/data/proveedores.models';
+import { Almacen } from '../../../../settings/pages/almacenes/data/almacenes.models';
+import { Articulo } from '../../../articulos/data/articulos.models';
+import { CompraCreatePayload, CompraShowResponse } from '../../data/compras.models';
+import { HasPermissionDirective } from '../../../../../core/directives/has-permission.directive';
 
-import { ProveedoresService } from '../../../proveedores/data/proveedores.service'; // ajusta
-import { ArticulosService } from '../../../articulos/data/articulos.service';       // ajusta
-import { AlmacenesMinService, AlmacenMini } from '../../data/almacenes-min.service';
-import { FormasPagoService, FormaPago } from '../../data/formas-pago.service';
-
-type FieldErrors = Record<string, string[]>;
+type FormaPago = { id: number; descripcion: string };
 
 @Component({
   selector: 'app-compra-form',
   standalone: true,
-  imports: [CommonModule, RouterLink, ReactiveFormsModule, AgGridAngular, FormsModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    RouterLink,
+    RowComponent,
+    ColComponent,
+    CardComponent,
+    CardHeaderComponent,
+    CardBodyComponent,
+    ButtonDirective,
+    SpinnerComponent,
+    BadgeComponent,
+    HasPermissionDirective,
+  ],
   templateUrl: './compra-form.component.html',
   styleUrl: './compra-form.component.scss',
 })
 export class CompraFormComponent {
+  private comprasSvc = inject(ComprasService);
+  private proveedoresSvc = inject(ProveedoresService);
+  private almacenesSvc = inject(AlmacenesService);
+  private articulosSvc = inject(ArticulosService);
+  private formasPagoSvc = inject(FormasPagoService);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+
+  id = Number(this.route.snapshot.paramMap.get('id') ?? 0) || null;
+
   loading = signal(false);
   saving = signal(false);
-  cancelling = signal(false);
 
-  fieldErrors = signal<FieldErrors>({});
-
-  compraId: number | null = null;
-  mode: 'create' | 'view' = 'create';
-
-  compra = signal<Compra | null>(null);
-
-  proveedores = signal<any[]>([]);
-  almacenes = signal<AlmacenMini[]>([]);
+  proveedores = signal<Proveedor[]>([]);
+  almacenes = signal<Almacen[]>([]);
+  articulos = signal<Articulo[]>([]);
   formasPago = signal<FormaPago[]>([]);
-  articulos = signal<any[]>([]);
 
-  // Grid detalles (solo visual)
-  detallesRows = computed(() => this.detalles.controls.map((c) => c.value as any));
+  showData = signal<CompraShowResponse | null>(null);
+  fieldErrors = signal<Record<string, string[]>>({});
 
-  detallesColDefs: ColDef[] = [
-    { headerName: 'Artículo', flex: 1, minWidth: 220, valueGetter: (p) => this.articuloNombre(p.data?.articulo_id) },
-    { headerName: 'Variedad', field: 'variedad', width: 150 },
-    { headerName: 'Cant.', field: 'cantidad', width: 110 },
-    { headerName: 'Emp.', field: 'empaque', width: 110 },
-    { headerName: 'Costo', field: 'costo', width: 120, valueFormatter: (p) => this.money(p.value) },
-    { headerName: 'Imp.', field: 'impuestos', width: 120, valueFormatter: (p) => this.money(p.value) },
-    { headerName: 'Precio', field: 'precio', width: 120, valueFormatter: (p) => this.money(p.value) },
-    { headerName: 'Precio min', field: 'precio_min', width: 130, valueFormatter: (p) => this.money(p.value) },
-    { headerName: 'Subtotal', width: 130, valueGetter: (p) => this.toNumber(p.data?.cantidad) * this.toNumber(p.data?.costo), valueFormatter: (p) => this.money(p.value) },
-  ];
+  // ✅ Totales reactivos (siempre correctos)
+  totals = signal({ subtotal: 0, impuestos: 0, total: 0 });
 
-  defaultColDef: ColDef = { sortable: true, resizable: true };
+  // ✅ Regex: solo letras/espacios/acentos/ñ, guion, punto. SIN números.
+  // Ajusta si quieres permitir "/" o "(" etc.
+  private readonly variedadRegex = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s\.\-]+$/;
 
-  form = this.createForm();
+  form = new FormGroup({
+    fecha: new FormControl<string>('', { nonNullable: true, validators: [Validators.required] }),
+    referencia: new FormControl<string | null>(null),
 
-  constructor(
-    private fb: FormBuilder,
-    private route: ActivatedRoute,
-    private router: Router,
-    private comprasSvc: ComprasService,
-    private proveedoresSvc: ProveedoresService,
-    private articulosSvc: ArticulosService,
-    private almacenesSvc: AlmacenesMinService,
-    private formasPagoSvc: FormasPagoService,
-  ) {
-    const idParam = this.route.snapshot.paramMap.get('id');
-    this.compraId = idParam ? Number(idParam) : null;
-    this.mode = this.compraId ? 'view' : 'create';
+    proveedor_id: new FormControl<number | null>(null, Validators.required),
+    almacen_id: new FormControl<number | null>(null, Validators.required),
 
-    this.loadCatalogs();
+    credito: new FormControl<boolean>(false, { nonNullable: true }),
+    dias_credito: new FormControl<number | null>(null),
+    f_pago_id: new FormControl<number | null>(null),
 
-    if (this.mode === 'view') {
-      this.loadCompra();
-      this.form.disable();
-    } else {
-      // defaults
-      const today = new Date().toISOString().slice(0, 10);
-      this.form.patchValue({ fecha: today, credito: false });
-      this.addDetalle();
-      this.onCreditoChanged(false);
-      this.bindCreditoWatch();
-    }
+    detalles: new FormArray<FormGroup>([]),
+  });
+
+  get detalles(): FormArray<FormGroup> {
+    return this.form.get('detalles') as FormArray<FormGroup>;
   }
 
-  private createForm() {
-    return this.fb.group({
-      fecha: ['', [Validators.required]],
-      referencia: [''],
+  isCancelada = computed(() => (this.showData()?.estatus ?? '').toLowerCase() === 'cancelada');
 
-      proveedor_id: [null as any, [Validators.required]],
-      almacen_id: [null as any, [Validators.required]],
+  constructor() {
+    this.loadCombos();
+    if (this.id) this.load();
+    else this.addRow();
 
-      credito: [false],
-      dias_credito: [null as any],
-      f_pago_id: [null as any],
+    // ✅ Recalcular totales cada vez que cambia el formulario
+    this.form.valueChanges.subscribe(() => this.recalcTotals());
 
-      subtotal: [{ value: 0, disabled: true }],
-      impuestos: [{ value: 0, disabled: true }],
-      total: [{ value: 0, disabled: true }],
-
-      detalles: this.fb.array([]),
-    });
+    // ✅ Primer cálculo
+    this.recalcTotals();
   }
 
-  get title(): string {
-    return this.mode === 'create' ? 'Nueva compra' : 'Detalle de compra';
-  }
-
-  get detalles(): FormArray {
-    return this.form.get('detalles') as FormArray;
-  }
-
-  private bindCreditoWatch() {
-    this.form.get('credito')?.valueChanges.subscribe((v) => this.onCreditoChanged(!!v));
-  }
-
-  private onCreditoChanged(isCredito: boolean) {
-    const dias = this.form.get('dias_credito');
-    const fp = this.form.get('f_pago_id');
-
-    if (isCredito) {
-      dias?.setValidators([Validators.required, Validators.min(1)]);
-      fp?.clearValidators();
-      fp?.setValue(null);
-    } else {
-      fp?.setValidators([Validators.required]);
-      dias?.clearValidators();
-      dias?.setValue(null);
-    }
-
-    dias?.updateValueAndValidity();
-    fp?.updateValueAndValidity();
-  }
-
-  private loadCatalogs() {
-    this.proveedoresSvc.list({ per_page: 500 }).subscribe({
+  private loadCombos() {
+    this.proveedoresSvc.list({ per_page: 200, page: 1, activo: true }).subscribe({
       next: (res: any) => this.proveedores.set(Array.isArray(res) ? res : (res?.data ?? [])),
-      error: () => this.proveedores.set([]),
     });
 
-    this.articulosSvc.list({
-      per_page: 1000,
-      page: 0
-    }).subscribe({
-      next: (res: any) => this.articulos.set(Array.isArray(res) ? res : (res?.data ?? [])),
-      error: () => this.articulos.set([]),
+    this.almacenesSvc.list({ activo: true }).subscribe({
+      next: (res) => this.almacenes.set(res ?? []),
     });
 
-    this.almacenesSvc.list().subscribe({
-      next: (res) => this.almacenes.set(res),
-      error: () => this.almacenes.set([]),
+    this.articulosSvc.list({ page: 1, per_page: 500, activo: true }).subscribe({
+      next: (res: any) => this.articulos.set(res?.data ?? []),
     });
 
     this.formasPagoSvc.list().subscribe({
-      next: (res) => this.formasPago.set(res),
-      error: () => this.formasPago.set([]),
+      next: (res: any) => this.formasPago.set(Array.isArray(res) ? res : (res?.data ?? [])),
     });
   }
 
-  private loadCompra() {
-    if (!this.compraId) return;
+  private load() {
+    if (!this.id) return;
     this.loading.set(true);
 
-    this.comprasSvc.get(this.compraId).subscribe({
+    this.comprasSvc.get(this.id).subscribe({
       next: (res: any) => {
-        const compra = res as Compra;
-        this.compra.set(compra);
+        const data = res as CompraShowResponse;
+        this.showData.set(data);
 
-        // en view, solo mostramos info en la tarjeta + tabla de detalles
+        this.form.patchValue({
+          fecha: data.fecha,
+          referencia: data.referencia,
+          proveedor_id: data.proveedor_id,
+        });
+
+        // detalles
+        this.detalles.clear();
+        (data.detalles ?? []).forEach((d) => {
+          const g = this.rowGroup();
+          g.patchValue({
+            articulo_id: d.articulo_id,
+            variedad: d.variedad,
+            cantidad: Number(d.cantidad ?? 0),
+            empaque: Number(d.empaque ?? 0),
+            costo: Number(d.costo ?? 0),
+            impuestos: Number(d.impuestos ?? 0),
+
+            // en show no vienen, pero no importa
+            precio: 0,
+            precio_min: 0,
+          });
+          this.detalles.push(g);
+        });
+
+        this.fieldErrors.set({});
         this.loading.set(false);
+
+        // ✅ recalcular con datos cargados
+        this.recalcTotals();
       },
-      error: () => {
+      error: (error) => {
         this.loading.set(false);
-        this.router.navigateByUrl('/404');
+        // this.router.navigateByUrl('/404');
       },
     });
   }
 
-  addDetalle() {
-    const g = this.fb.group({
-      articulo_id: [null as any, Validators.required],
-      variedad: ['', [Validators.required, Validators.maxLength(50)]],
-      cantidad: [1, [Validators.required, Validators.min(0.001)]],
-      empaque: [0, [Validators.min(0)]],
-      costo: [0, [Validators.required, Validators.min(0)]],
-      impuestos: [0, [Validators.min(0)]],
-      precio: [0, [Validators.required, Validators.min(0)]],
-      precio_min: [0, [Validators.required, Validators.min(0)]],
+  // ✅ Grupo de renglón
+  rowGroup() {
+    return new FormGroup({
+      articulo_id: new FormControl<number | null>(null, Validators.required),
+      variedad: new FormControl<string>('', {
+        nonNullable: true,
+        validators: [
+          Validators.required,
+          Validators.maxLength(50),
+          Validators.pattern(this.variedadRegex),
+        ],
+      }),
+      cantidad: new FormControl<number>(1, {
+        nonNullable: true,
+        validators: [Validators.required, Validators.min(0.001)],
+      }),
+      empaque: new FormControl<number>(0, { nonNullable: true, validators: [Validators.min(0)] }),
+      costo: new FormControl<number>(0, {
+        nonNullable: true,
+        validators: [Validators.required, Validators.min(0)],
+      }),
+      impuestos: new FormControl<number>(0, { nonNullable: true, validators: [Validators.min(0)] }),
+      precio: new FormControl<number>(0, {
+        nonNullable: true,
+        validators: [Validators.required, Validators.min(0)],
+      }),
+      precio_min: new FormControl<number>(0, {
+        nonNullable: true,
+        validators: [Validators.required, Validators.min(0)],
+      }),
     });
+  }
 
-    g.valueChanges.subscribe(() => this.recalcTotals());
-
-    this.detalles.push(g);
+  addRow() {
+    this.detalles.push(this.rowGroup());
     this.recalcTotals();
   }
 
-  removeDetalle(i: number) {
-    if (this.detalles.length <= 1) return;
+  removeRow(i: number) {
     this.detalles.removeAt(i);
+    if (this.detalles.length === 0) this.addRow();
     this.recalcTotals();
   }
 
-  recalcTotals() {
-    const dets = this.detalles.controls.map((c) => c.value as any);
+  private n(v: any): number {
+    const x = Number(v);
+    return Number.isFinite(x) ? x : 0;
+  }
+
+  // ✅ Cálculo REAL de totales (siempre correcto)
+  private recalcTotals() {
+    const rows = this.detalles.controls;
 
     let subtotal = 0;
     let impuestos = 0;
 
-    for (const d of dets) {
-      const cant = this.toNumber(d.cantidad);
-      const costo = this.toNumber(d.costo);
-      const imp = this.toNumber(d.impuestos);
-      subtotal += cant * costo;
+    for (const g of rows) {
+      const cantidad = this.n(g.get('cantidad')?.value);
+      const costo = this.n(g.get('costo')?.value);
+      const imp = this.n(g.get('impuestos')?.value);
+
+      subtotal += cantidad * costo;
       impuestos += imp;
     }
 
-    const total = subtotal + impuestos;
+    // Evitar -0 y cosas raras
+    subtotal = Math.max(0, subtotal);
+    impuestos = Math.max(0, impuestos);
 
-    this.form.patchValue(
-      {
-        subtotal: this.round2(subtotal),
-        impuestos: this.round2(impuestos),
-        total: this.round2(total),
-      },
-      { emitEvent: false },
-    );
+    this.totals.set({
+      subtotal,
+      impuestos,
+      total: subtotal + impuestos,
+    });
   }
 
-  submit() {
-    if (this.mode !== 'create') return;
+  back() {
+    this.router.navigate(['/catalog/compras']);
+  }
 
-    this.fieldErrors.set({});
-    this.form.markAllAsTouched();
-    if (this.form.invalid) return;
-
-    this.saving.set(true);
+  save() {
+    if (this.id) return; // no editamos compras
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
 
     const raw = this.form.getRawValue();
 
-    const payload: CompraStorePayload = {
+    const credito = !!raw.credito;
+    const diasCredito = credito ? this.n(raw.dias_credito) : null;
+    const formaPagoId = !credito ? this.n(raw.f_pago_id) : null;
+
+    if (credito && (!diasCredito || diasCredito < 1)) {
+      this.fieldErrors.set({ dias_credito: ['Requerido cuando es crédito.'] });
+      return;
+    }
+    if (!credito && (!formaPagoId || formaPagoId < 1)) {
+      this.fieldErrors.set({ f_pago_id: ['Requerido cuando es contado.'] });
+      return;
+    }
+
+    // ✅ forzar recálculo antes de enviar
+    this.recalcTotals();
+    const t = this.totals();
+
+    const payload: CompraCreatePayload = {
       fecha: raw.fecha!,
-      referencia: raw.referencia?.trim() || null,
+      referencia: raw.referencia ?? null,
       proveedor_id: Number(raw.proveedor_id),
       almacen_id: Number(raw.almacen_id),
 
-      credito: !!raw.credito,
-      dias_credito: raw.credito ? Number(raw.dias_credito) : null,
-      f_pago_id: raw.credito ? null : Number(raw.f_pago_id),
+      subtotal: t.subtotal,
+      impuestos: t.impuestos,
+      total: t.total,
 
-      subtotal: this.toNumber(raw.subtotal),
-      impuestos: this.toNumber(raw.impuestos),
-      total: this.toNumber(raw.total),
+      credito,
+      dias_credito: credito ? diasCredito! : undefined,
+      f_pago_id: !credito ? formaPagoId! : undefined,
 
       detalles: (raw.detalles ?? []).map((d: any) => ({
         articulo_id: Number(d.articulo_id),
+        // ✅ limpiar espacios + validar solo texto
         variedad: String(d.variedad ?? '').trim(),
-        cantidad: this.toNumber(d.cantidad),
-        empaque: this.toNumber(d.empaque),
-        costo: this.toNumber(d.costo),
-        impuestos: this.toNumber(d.impuestos),
-        precio: this.toNumber(d.precio),
-        precio_min: this.toNumber(d.precio_min),
+        cantidad: this.n(d.cantidad),
+        empaque: this.n(d.empaque ?? 0),
+        costo: this.n(d.costo),
+        impuestos: this.n(d.impuestos ?? 0),
+        precio: this.n(d.precio),
+        precio_min: this.n(d.precio_min),
       })),
     };
 
+    this.saving.set(true);
+    this.fieldErrors.set({});
+
     this.comprasSvc.create(payload).subscribe({
-      next: () => {
+      next: (res: any) => {
         this.saving.set(false);
-        this.router.navigate(['/catalog/compras'], { queryParams: this.route.snapshot.queryParams });
+        const id = res?.compra?.id;
+        if (id){ this.router.navigate(['/catalog/compras', id, 'ver']); }
+        else{ this.router.navigate(['/catalog/compras']); }
       },
       error: (err) => {
         this.saving.set(false);
 
-        if (err?.status === 422 && err?.error?.errors) {
-          this.fieldErrors.set(err.error.errors as FieldErrors);
+        const errors = err?.error?.errors;
+        if (errors) {
+          this.fieldErrors.set(errors);
           return;
         }
 
-        alert(err?.error?.message ?? 'Ocurrió un error al guardar.');
+        this.fieldErrors.set({ general: [err?.error?.message ?? 'Error al guardar.'] });
       },
     });
   }
 
-  cancelarCompra() {
-    if (this.mode !== 'view' || !this.compraId) return;
-    if (!confirm('¿Seguro que deseas cancelar esta compra?')) return;
+  cancelar() {
+    if (!this.id) return;
+    this.saving.set(true);
 
-    this.cancelling.set(true);
-
-    this.comprasSvc.cancelar(this.compraId).subscribe({
-      next: (res) => {
-        this.cancelling.set(false);
-        alert(res?.message ?? 'Listo.');
-        this.loadCompra();
+    this.comprasSvc.cancelar(this.id).subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.load();
       },
       error: (err) => {
-        this.cancelling.set(false);
-        alert(err?.error?.message ?? 'No se pudo cancelar.');
+        this.saving.set(false);
+        this.fieldErrors.set({ general: [err?.error?.message ?? 'No se pudo cancelar.'] });
       },
     });
   }
 
-  cancel() {
-    this.router.navigate(['/catalog/compras'], { queryParams: this.route.snapshot.queryParams });
-  }
-
-  // UI helpers
-  backendError(path: string): string | null {
-    return this.fieldErrors()[path]?.[0] ?? null;
-  }
-
-  articuloNombre(id: any): string {
-    const nId = Number(id);
-    const a = this.articulos().find((x: any) => Number(x.id) === nId);
-    return a?.nombre ?? a?.descripcion ?? `#${nId || '-'}`;
-  }
-
-  private toNumber(v: any): number {
-    const n = typeof v === 'string' ? Number(v) : Number(v ?? 0);
-    return Number.isFinite(n) ? n : 0;
-  }
-
-  private round2(n: number): number {
-    return Math.round(n * 100) / 100;
-  }
-
-  private money(v: any): string {
-    const n = this.toNumber(v);
-    return n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  badge(estatus?: string | null) {
+    const s = (estatus ?? 'activa').toLowerCase();
+    return s === 'cancelada' ? 'danger' : 'success';
   }
 }
