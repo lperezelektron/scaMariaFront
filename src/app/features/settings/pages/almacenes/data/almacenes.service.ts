@@ -1,8 +1,9 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { environment } from 'src/enviroments/environment';
+
 import { Almacen, AlmacenShowResponse, InventarioItem } from './almacenes.models';
+import { environment } from '../../../../../../enviroments/environment';
 
 export interface AlmacenesQuery {
   activo?: boolean | null;

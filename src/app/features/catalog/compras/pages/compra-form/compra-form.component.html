@@ -1,0 +1,297 @@
+<c-row class="g-3">
+  <c-col xs="12">
+    <c-card>
+      <c-card-header class="d-flex align-items-center justify-content-between">
+        <div class="fw-semibold">
+          {{ id ? 'Detalle de compra' : 'Nueva compra' }}
+          <c-badge class="ms-2" *ngIf="id" [color]="badge(showData()?.estatus)">
+            {{ (showData()?.estatus ?? 'activa') | titlecase }}
+          </c-badge>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button cButton color="secondary" variant="outline" (click)="back()">Volver</button>
+
+          <ng-container *ngIf="id && !isCancelada()">
+            <button
+              cButton
+              color="danger"
+              variant="outline"
+              *hasPermission="'catalogos.crear'"
+              [disabled]="saving()"
+              (click)="cancelar()"
+            >
+              Cancelar
+            </button>
+          </ng-container>
+
+          <ng-container *ngIf="!id">
+            <button
+              cButton
+              color="primary"
+              *hasPermission="'compras.crear'"
+              [disabled]="saving()"
+              (click)="save()"
+            >
+              <c-spinner size="sm" *ngIf="saving()"></c-spinner>
+              Guardar
+            </button>
+          </ng-container>
+        </div>
+      </c-card-header>
+
+      <c-card-body>
+        <div *ngIf="loading()" class="text-center py-4">
+          <c-spinner size="sm"></c-spinner>
+        </div>
+
+        <div *ngIf="!loading()">
+          <div class="alert alert-danger" *ngIf="fieldErrors()['general']?.length">
+            {{ fieldErrors()['general'][0] }}
+          </div>
+
+          <form [formGroup]="form" class="form">
+            <div class="row g-3">
+              <div class="col-12 col-md-3">
+                <label class="form-label">Fecha</label>
+                <input class="form-control" type="date" formControlName="fecha" [readonly]="!!id" />
+                <div class="text-danger small" *ngIf="fieldErrors()['fecha']?.length">
+                  {{ fieldErrors()['fecha'][0] }}
+                </div>
+              </div>
+
+              <div class="col-12 col-md-3">
+                <label class="form-label">Referencia</label>
+                <input class="form-control" type="text" formControlName="referencia" [readonly]="!!id" />
+                <div class="text-danger small" *ngIf="fieldErrors()['referencia']?.length">
+                  {{ fieldErrors()['referencia'][0] }}
+                </div>
+              </div>
+
+              <div class="col-12 col-md-3">
+                <label class="form-label">Proveedor</label>
+                <select class="form-select" formControlName="proveedor_id" [disabled]="!!id">
+                  <option [ngValue]="null">Selecciona…</option>
+                  <option *ngFor="let p of proveedores()" [ngValue]="p.id">{{ p.nombre }}</option>
+                </select>
+                <div class="text-danger small" *ngIf="fieldErrors()['proveedor_id']?.length">
+                  {{ fieldErrors()['proveedor_id'][0] }}
+                </div>
+              </div>
+
+              <div class="col-12 col-md-3">
+                <label class="form-label">Almacén</label>
+                <select class="form-select" formControlName="almacen_id" [disabled]="!!id">
+                  <option [ngValue]="null">Selecciona…</option>
+                  <option *ngFor="let a of almacenes()" [ngValue]="a.id">{{ a.descripcion }}</option>
+                </select>
+                <div class="text-danger small" *ngIf="fieldErrors()['almacen_id']?.length">
+                  {{ fieldErrors()['almacen_id'][0] }}
+                </div>
+              </div>
+
+              <!-- Crédito / contado -->
+              <div class="col-12 col-md-3" *ngIf="!id">
+                <label class="form-label">Tipo</label>
+                <div class="d-flex gap-3 pt-2">
+                  <label class="form-check">
+                    <input class="form-check-input" type="checkbox" formControlName="credito" />
+                    <span class="form-check-label">Crédito</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="col-12 col-md-3" *ngIf="!id && form.get('credito')?.value">
+                <label class="form-label">Días crédito</label>
+                <input class="form-control" type="number" min="1" formControlName="dias_credito" />
+                <div class="text-danger small" *ngIf="fieldErrors()['dias_credito']?.length">
+                  {{ fieldErrors()['dias_credito'][0] }}
+                </div>
+              </div>
+
+              <div class="col-12 col-md-3" *ngIf="!id && !form.get('credito')?.value">
+                <label class="form-label">Forma de pago</label>
+                <select class="form-select" formControlName="f_pago_id">
+                  <option [ngValue]="null">Selecciona…</option>
+                  <option *ngFor="let fp of formasPago()" [ngValue]="fp.id">
+                    {{ fp.descripcion }}
+                  </option>
+                </select>
+                <div class="text-danger small" *ngIf="fieldErrors()['f_pago_id']?.length">
+                  {{ fieldErrors()['f_pago_id'][0] }}
+                </div>
+              </div>
+            </div>
+
+            <hr class="my-4" />
+
+            <!-- Detalles -->
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <div class="fw-semibold">Detalles</div>
+              <button
+                cButton
+                color="secondary"
+                variant="outline"
+                type="button"
+                *ngIf="!id"
+                (click)="addRow()"
+              >
+                Agregar renglón
+              </button>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table align-middle">
+                <thead>
+                  <tr>
+                    <th style="min-width: 260px;">Artículo</th>
+                    <th style="min-width: 160px;">Variedad</th>
+                    <th style="width: 120px;" class="text-end">Cantidad</th>
+                    <th style="width: 120px;" class="text-end">Empaque</th>
+                    <th style="width: 120px;" class="text-end">Costo</th>
+                    <th style="width: 120px;" class="text-end">Impuestos</th>
+                    <th style="width: 120px;" class="text-end">Precio</th>
+                    <th style="width: 140px;" class="text-end">Precio mín</th>
+                    <th style="width: 70px;"></th>
+                  </tr>
+                </thead>
+
+                <tbody formArrayName="detalles">
+                  <tr *ngFor="let g of detalles.controls; let i = index" [formGroupName]="i">
+                    <td>
+                      <select class="form-select" formControlName="articulo_id" [disabled]="!!id">
+                        <option [ngValue]="null">Selecciona…</option>
+                        <option *ngFor="let a of articulos()" [ngValue]="a.id">
+                          {{ a.nombre }}
+                        </option>
+                      </select>
+                      <div class="text-danger small" *ngIf="fieldErrors()['detalles.' + i + '.articulo_id']?.length">
+                        {{ fieldErrors()['detalles.' + i + '.articulo_id'][0] }}
+                      </div>
+                    </td>
+
+                    <td>
+                      <input
+                        class="form-control"
+                        type="text"
+                        formControlName="variedad"
+                        [readonly]="!!id"
+                        placeholder="Ej: Chica, Mediana, Grande"
+                      />
+                      <div class="text-danger small" *ngIf="g.get('variedad')?.touched && g.get('variedad')?.invalid">
+                        <span *ngIf="g.get('variedad')?.errors?.['required']">La variedad es requerida.</span>
+                        <span *ngIf="g.get('variedad')?.errors?.['pattern']">Solo texto (sin números).</span>
+                        <span *ngIf="g.get('variedad')?.errors?.['maxlength']">Máximo 50 caracteres.</span>
+                      </div>
+                    </td>
+
+                    <td>
+                      <input
+                        class="form-control text-end"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        formControlName="cantidad"
+                        [readonly]="!!id"
+                      />
+                    </td>
+
+                    <td>
+                      <input
+                        class="form-control text-end"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        formControlName="empaque"
+                        [readonly]="!!id"
+                      />
+                    </td>
+
+                    <td>
+                      <input
+                        class="form-control text-end"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        formControlName="costo"
+                        [readonly]="!!id"
+                      />
+                    </td>
+
+                    <td>
+                      <input
+                        class="form-control text-end"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        formControlName="impuestos"
+                        [readonly]="!!id"
+                      />
+                    </td>
+
+                    <td>
+                      <input
+                        class="form-control text-end"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        formControlName="precio"
+                        [readonly]="!!id"
+                      />
+                    </td>
+
+                    <td>
+                      <input
+                        class="form-control text-end"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        formControlName="precio_min"
+                        [readonly]="!!id"
+                      />
+                    </td>
+
+                    <td class="text-end">
+                      <button
+                        cButton
+                        color="danger"
+                        variant="outline"
+                        size="sm"
+                        type="button"
+                        *ngIf="!id"
+                        (click)="removeRow(i)"
+                      >
+                        ✕
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Totales -->
+            <div class="totals mt-3">
+              <div class="row g-2 justify-content-end">
+                <div class="col-12 col-md-4">
+                  <div class="d-flex justify-content-between">
+                    <span class="text-medium-emphasis">Subtotal</span>
+                    <span class="fw-semibold">{{ totals().subtotal | number: '1.2-2' }}</span>
+                  </div>
+                  <div class="d-flex justify-content-between">
+                    <span class="text-medium-emphasis">Impuestos</span>
+                    <span class="fw-semibold">{{ totals().impuestos | number: '1.2-2' }}</span>
+                  </div>
+                  <div class="d-flex justify-content-between">
+                    <span class="text-medium-emphasis">Total</span>
+                    <span class="fw-bold">{{ totals().total | number: '1.2-2' }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </form>
+        </div>
+      </c-card-body>
+    </c-card>
+  </c-col>
+</c-row>

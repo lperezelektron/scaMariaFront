@@ -29,6 +29,12 @@ export const routes: Routes = [
           import('./clientes/clientes.routes').then((m) => m.routes),
       },
       {
+        path: 'compras',
+        data: { title: 'Compras' },
+        loadChildren: () =>
+          import('./compras/compras.routes').then((m) => m.routes),
+      },
+      {
         path: '',
         redirectTo: 'categorias',
         pathMatch: 'full',

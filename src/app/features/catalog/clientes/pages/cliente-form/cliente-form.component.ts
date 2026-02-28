@@ -93,13 +93,7 @@ export class ClienteFormComponent {
     },
   ];
 
-  form = this.fb.group({
-    nombre: ['', [Validators.required, Validators.maxLength(255)]],
-    direccion: ['', [Validators.maxLength(255)]],
-    ciudad: ['', [Validators.maxLength(255)]],
-    telefono: ['', [Validators.maxLength(20)]],
-    activo: [true],
-  });
+  
 
   constructor(
     private fb: FormBuilder,
@@ -113,6 +107,14 @@ export class ClienteFormComponent {
 
     if (this.mode === 'edit') this.loadCliente();
   }
+
+  form = this.fb.group({
+    nombre: ['', [Validators.required, Validators.maxLength(255)]],
+    direccion: ['', [Validators.maxLength(255)]],
+    ciudad: ['', [Validators.maxLength(255)]],
+    telefono: ['', [Validators.maxLength(20)]],
+    activo: [true],
+  });
 
   private docVta(ventaId?: number | null): string {
     if (!ventaId) return '-';

@@ -57,7 +57,13 @@ export const navItems: INavDataPerm[] = [
         url: '/catalog/proveedores',
         icon: 'nav-icon-bullet',
         permissions: ['catalogos.ver'],
-      }
+      }, 
+      {
+        name: 'Compras',
+        url: '/catalog/compras',
+        icon: 'nav-icon-bullet',
+        permissions: ['catalogos.ver'],
+      },
     ],
   },
 

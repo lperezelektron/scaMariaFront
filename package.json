@@ -36,6 +36,8 @@
     "@coreui/icons": "^3.0.1",
     "@coreui/icons-angular": "~5.2.22",
     "@coreui/utils": "^2.0.2",
+    "ag-charts-community": "^13.1.0",
+    "ag-charts-types": "^13.1.0",
     "ag-grid-angular": "^35.1.0",
     "ag-grid-community": "^35.1.0",
     "chart.js": "^4.4.6",
@@ -62,7 +64,7 @@
     "typescript": "~5.5.4"
   },
   "engines": {
-    "node": "^18.19.0 || ^20.9.0",
+    "node": ">=22 <23",
     "npm": ">= 9"
   }
 }
