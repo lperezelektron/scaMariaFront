@@ -4,7 +4,7 @@ import { permissionMatch } from '../../../core/auth/permission.match';
 export const routes: Routes = [
   {
     path: '',
-    canMatch: [permissionMatch('catalogos.ver')],
+    canMatch: [permissionMatch('ventas.ver')],
     data: { title: 'Listado de Compras' },
     loadComponent: () =>
       import('./pages/compras-list/compras-list.component').then(
@@ -13,7 +13,7 @@ export const routes: Routes = [
   },
   {
     path: 'nuevo',
-    canMatch: [permissionMatch('catalogos.crear')],
+    canMatch: [permissionMatch('ventas.crear')],
     data: { title: 'Nueva Compra' },
     loadComponent: () =>
       import('./pages/compra-form/compra-form.component').then(
@@ -22,7 +22,7 @@ export const routes: Routes = [
   },
   {
     path: ':id/ver',
-    canMatch: [permissionMatch('catalogos.ver')],
+    canMatch: [permissionMatch('ventas.ver')],
     data: { title: 'Detalle de Compra' },
     loadComponent: () =>
       import('./pages/compra-form/compra-form.component').then(
