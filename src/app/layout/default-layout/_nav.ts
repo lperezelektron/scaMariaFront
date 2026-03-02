@@ -22,9 +22,15 @@ export const navItems: INavDataPerm[] = [
   },
   {
     name: 'Caja',
-    url: '/settings/perifericos',
+    url: '/operation/caja',
     iconComponent: { name: 'cil-dollar' },
     permissions: ['caja.ver', 'caja.movimiento', 'caja.corte'],
+  },
+  {
+    name: 'Compras',
+    url: '/operation/compras',
+    icon: 'nav-icon-bullet',
+    permissions: ['ventas.ver'],
   },
 
   { title: true, name: 'Catálogos' },
@@ -57,10 +63,10 @@ export const navItems: INavDataPerm[] = [
         url: '/catalog/proveedores',
         icon: 'nav-icon-bullet',
         permissions: ['catalogos.ver'],
-      }, 
+      },
       {
-        name: 'Compras',
-        url: '/catalog/compras',
+        name: 'Formas de pago',
+        url: '/catalog/formas-pago',
         icon: 'nav-icon-bullet',
         permissions: ['catalogos.ver'],
       },

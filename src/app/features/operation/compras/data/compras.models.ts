@@ -57,7 +57,6 @@ export interface CompraShowResponse {
 
   detalles: CompraDetalle[];
 
-  // tu backend devuelve: $compra->load(['proveedor','user','detalles.articulo','ctaPorPagar.detalles.formaPago'])
   cta_por_pagar?: any;
   ctaPorPagar?: any;
 }

@@ -14,13 +14,13 @@ import {
   BadgeComponent,
 } from '@coreui/angular';
 import { ComprasService } from '../../data/compras.service';
-import { ProveedoresService } from '../../../proveedores/data/proveedores.service';
+import { ProveedoresService } from '../../../../catalog/proveedores/data/proveedores.service';
 import { AlmacenesService } from '../../../../settings/pages/almacenes/data/almacenes.service';
-import { ArticulosService } from '../../../articulos/data/articulos.service';
-import { FormasPagoService } from '../../../formas-pago/data/formas-pago.service';
-import { Proveedor } from '../../../proveedores/data/proveedores.models';
+import { ArticulosService } from '../../../../catalog/articulos/data/articulos.service';
+import { FormasPagoService } from '../../../../catalog/formas-pago/data/formas-pago.service';
+import { Proveedor } from '../../../../catalog/proveedores/data/proveedores.models';
 import { Almacen } from '../../../../settings/pages/almacenes/data/almacenes.models';
-import { Articulo } from '../../../articulos/data/articulos.models';
+import { Articulo } from '../../../../catalog/articulos/data/articulos.models';
 import { CompraCreatePayload, CompraShowResponse } from '../../data/compras.models';
 import { HasPermissionDirective } from '../../../../../core/directives/has-permission.directive';
 
@@ -132,6 +132,7 @@ export class CompraFormComponent {
     this.comprasSvc.get(this.id).subscribe({
       next: (res: any) => {
         const data = res as CompraShowResponse;
+        console.log('Compra cargada:', data);
         this.showData.set(data);
 
         this.form.patchValue({
@@ -249,7 +250,7 @@ export class CompraFormComponent {
   }
 
   back() {
-    this.router.navigate(['/catalog/compras']);
+    this.router.navigate(['/operation/compras']);
   }
 
   save() {
@@ -312,8 +313,8 @@ export class CompraFormComponent {
       next: (res: any) => {
         this.saving.set(false);
         const id = res?.compra?.id;
-        if (id){ this.router.navigate(['/catalog/compras', id, 'ver']); }
-        else{ this.router.navigate(['/catalog/compras']); }
+        if (id){ this.router.navigate(['/operation/compras', id, 'ver']); }
+        else{ this.router.navigate(['/operation/compras']); }
       },
       error: (err) => {
         this.saving.set(false);

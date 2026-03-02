@@ -29,10 +29,10 @@ export const routes: Routes = [
           import('./clientes/clientes.routes').then((m) => m.routes),
       },
       {
-        path: 'compras',
-        data: { title: 'Compras' },
+        path: 'formas-pago',
+        data: { title: 'Formas de pago' },
         loadChildren: () =>
-          import('./compras/compras.routes').then((m) => m.routes),
+          import('./formas-pago/formas-pago.routes').then((m) => m.routes),
       },
       {
         path: '',

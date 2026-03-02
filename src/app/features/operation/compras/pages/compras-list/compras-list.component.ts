@@ -1,23 +1,21 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, DestroyRef } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import {
   ButtonDirective,
-  CardBodyComponent,
-  CardComponent,
-  CardHeaderComponent,
-  ColComponent,
-  RowComponent,
   SpinnerComponent,
   TableDirective,
   BadgeComponent,
 } from '@coreui/angular';
+
 import { ComprasService } from '../../data/compras.service';
-import { ProveedoresService } from '../../../proveedores/data/proveedores.service';
+import { ProveedoresService } from '../../../../catalog/proveedores/data/proveedores.service';
 import { Compra, PaginatedResponse } from '../../data/compras.models';
-import { Proveedor } from '../../../proveedores/data/proveedores.models';
+import { Proveedor } from '../../../../catalog/proveedores/data/proveedores.models';
 import { HasPermissionDirective } from '../../../../../core/directives/has-permission.directive';
 
 @Component({
@@ -27,16 +25,11 @@ import { HasPermissionDirective } from '../../../../../core/directives/has-permi
     CommonModule,
     ReactiveFormsModule,
     RouterLink,
-    RowComponent,
-    ColComponent,
-    CardComponent,
-    CardHeaderComponent,
-    CardBodyComponent,
     ButtonDirective,
     SpinnerComponent,
     TableDirective,
     BadgeComponent,
-    HasPermissionDirective
+    HasPermissionDirective,
   ],
   templateUrl: './compras-list.component.html',
   styleUrl: './compras-list.component.scss',
@@ -45,6 +38,7 @@ export class ComprasListComponent {
   private comprasSvc = inject(ComprasService);
   private proveedoresSvc = inject(ProveedoresService);
   private router = inject(Router);
+  private destroyRef = inject(DestroyRef);
 
   loading = signal(false);
 
@@ -55,6 +49,8 @@ export class ComprasListComponent {
   lastPage = signal(1);
 
   proveedores = signal<Proveedor[]>([]);
+
+  banner = signal<{ type: 'success' | 'danger' | 'info'; text: string } | null>(null);
 
   filtros = new FormGroup({
     proveedor_id: new FormControl<number | null>(null),
@@ -68,10 +64,28 @@ export class ComprasListComponent {
 
   constructor() {
     this.loadProveedores();
-    effect(() => {
-      // carga inicial
-      this.fetch();
-    });
+
+    // ✅ Carga inicial inmediata
+    this.fetch(1);
+
+    // ✅ Recarga automática al cambiar filtros (sin botón "Aplicar")
+    this.filtros.valueChanges
+      .pipe(
+        debounceTime(250),
+        // distinctUntilChanged no funciona perfecto con objetos por referencia,
+        // pero ayuda en muchos casos; con debounce ya es suficiente.
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(() => {
+        this.page.set(1);
+        this.fetch(1);
+      });
+  }
+
+  reload() {
+    this.banner.set(null);
+    this.fetch(this.page());
   }
 
   loadProveedores() {
@@ -89,6 +103,7 @@ export class ComprasListComponent {
     const f = this.filtros.getRawValue();
 
     this.loading.set(true);
+
     this.comprasSvc
       .list({
         page: this.page(),
@@ -113,17 +128,18 @@ export class ComprasListComponent {
             this.page.set(pag.current_page ?? this.page());
             this.perPage.set(pag.per_page ?? this.perPage());
           }
+
           this.loading.set(false);
         },
-        error: () => this.loading.set(false),
+        error: () => {
+          this.loading.set(false);
+          this.banner.set({ type: 'danger', text: 'No se pudieron cargar las compras.' });
+        },
       });
   }
 
-  applyFilters() {
-    this.fetch(1);
-  }
-
   clearFilters() {
+    // OJO: esto disparará valueChanges y hará fetch(1) automáticamente
     this.filtros.reset({
       proveedor_id: null,
       fecha_inicio: null,
@@ -131,15 +147,14 @@ export class ComprasListComponent {
       mes: null,
       anio: null,
     });
-    this.fetch(1);
   }
 
   goNew() {
-    this.router.navigate(['/catalog/compras/nuevo']);
+    this.router.navigate(['/operation/compras/nuevo']);
   }
 
   open(item: Compra) {
-    this.router.navigate(['/catalog/compras', item.id]);
+    this.router.navigate(['/operation/compras', item.id, 'ver']);
   }
 
   prev() {

@@ -42,8 +42,13 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./views/dashboard/routes').then((m) => m.routes),
       },
-
-      // Módulos reales (lazy) - protegidos por permisos
+      {
+        path: 'operation',
+        loadChildren: () =>
+          import('./features/operation/operation.routes').then(
+            (m) => m.routes,
+          ),
+      },
       {
         path: 'catalog',
         canMatch: [permissionMatch('catalogos.ver')],
