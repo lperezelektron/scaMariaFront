@@ -3,19 +3,24 @@ import { Routes } from '@angular/router';
 export const routes: Routes = [
   {
     path: '',
+    loadComponent: () =>
+      import('./pages/pos-shell/pos-shell.component').then((m) => m.PosShellComponent),
     children: [
       {
         path: '',
+        pathMatch: 'full',
+        redirectTo: 'ventas/nueva',
+      },
+      {
+        path: 'ventas/nueva',
         loadComponent: () =>
-          import('./pages/pos-shell/pos-shell.component')
-            .then(m => m.PosShellComponent)
+          import('./ventas/pages/pos-venta/pos-venta.component').then((m) => m.PosVentaComponent),
       },
       {
         path: 'checkout',
         loadComponent: () =>
-          import('./pages/checkout/checkout.component')
-            .then(m => m.CheckoutComponent)
-      }
-    ]
-  }
+          import('./pages/checkout/checkout.component').then((m) => m.CheckoutComponent),
+      },
+    ],
+  },
 ];

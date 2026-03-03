@@ -1,1 +1,17 @@
-<p>pos-shell works!</p>
+<div class="pos-shell">
+  <header class="pos-topbar">
+    <div class="brand">
+      <div class="title">POS</div>
+      <div class="subtitle">Venta rápida (tablet)</div>
+    </div>
+
+    <nav class="pos-nav">
+      <a class="btn btn-outline-secondary" routerLink="/pos/ventas/nueva">Nueva venta</a>
+      <a class="btn btn-outline-secondary" routerLink="/pos/checkout">Checkout</a>
+    </nav>
+  </header>
+
+  <main class="pos-content">
+    <router-outlet></router-outlet>
+  </main>
+</div>

@@ -13,6 +13,7 @@ export interface Articulo {
   categoria?: Categoria;
   activo: boolean;
   inventarios_sum_existencia?: number;
+  imagen?: string | null;
 }
 
 export interface Paginated<T> {

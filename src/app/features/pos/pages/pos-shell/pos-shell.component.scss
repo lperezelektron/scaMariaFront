@@ -1,0 +1,40 @@
+.pos-shell {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pos-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+
+  background: var(--cui-card-bg, #fff);
+  border-radius: .75rem;
+  padding: 12px 14px;
+  box-shadow: 0 .125rem .25rem rgba(0,0,0,.04);
+}
+
+.brand .title {
+  font-weight: 800;
+  font-size: 1.1rem;
+}
+.brand .subtitle {
+  opacity: .7;
+  font-size: .9rem;
+}
+
+.pos-nav {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+
+  .btn { min-height: 44px; } // touch friendly
+}
+
+.pos-content {
+  min-height: calc(100vh - 90px);
+}

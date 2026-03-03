@@ -70,8 +70,6 @@ export const routes: Routes = [
       },
     ],
   },
-
-  // POS (layout propio) - protegido por permisos
   {
     path: 'pos',
     component: PosLayoutComponent,
