@@ -1,1 +1,26 @@
-<p>pos-layout works!</p>
+<div class="pos-layout">
+
+  <!-- Header POS -->
+  <header class="pos-header">
+    <div class="pos-left">
+      <div class="pos-logo">
+        Limonero POS
+      </div>
+      <div class="pos-time">
+        {{ now() }}
+      </div>
+    </div>
+
+    <div class="pos-right">
+      <a routerLink="/dashboard" class="exit-btn">
+        Salir
+      </a>
+    </div>
+  </header>
+
+  <!-- Contenido dinámico -->
+  <main class="pos-main">
+    <router-outlet></router-outlet>
+  </main>
+
+</div>

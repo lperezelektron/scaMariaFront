@@ -15,7 +15,7 @@
         type="button"
         class="btn btn-primary"
         (click)="goNew()"
-        *hasPermission="'catalogos.crear'"
+        *hasPermission="'compras.crear'"
       >
         Nueva compra
       </button>
@@ -94,7 +94,7 @@
               </c-badge>
             </td>
             <td class="text-end">
-              <button class="btn btn-light btn-sm" type="button" (click)="open(x)">
+              <button class="btn btn-light btn-sm" type="button" (click)="open(x)" *hasPermission="'compras.editar'">
                 Ver
               </button>
             </td>
