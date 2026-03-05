@@ -1,218 +1,236 @@
-<div class="pos-sale">
+<div class="pos-sale" [class.sidebar-open]="showCheckout()">
 
-  <div
-    *ngIf="banner() as b"
-    class="alert mb-2"
-    [class.alert-success]="b.type === 'success'"
-    [class.alert-danger]="b.type === 'danger'"
-    [class.alert-info]="b.type === 'info'"
-  >
+  <div *ngIf="banner() as b" class="alert mb-2" [class.alert-success]="b.type === 'success'"
+    [class.alert-danger]="b.type === 'danger'" [class.alert-info]="b.type === 'info'">
     {{ b.text }}
+  </div>
+
+  <!-- Selector de Almacén (fuera del grid principal) -->
+  <div class="top-controls" [formGroup]="form">
+    <div class="control-group">
+      <label class="control-label">Almacén</label>
+      <select class="form-select" formControlName="almacen_id">
+        <option [ngValue]="null">Selecciona almacén...</option>
+        <option *ngFor="let a of almacenes()" [ngValue]="a.id">{{ a.descripcion }}</option>
+      </select>
+      <div class="text-danger small mt-1" *ngIf="backendError('almacen_id')">
+        {{ backendError('almacen_id') }}
+      </div>
+    </div>
   </div>
 
   <section class="grid">
 
-    <!-- LEFT: catálogo + lotes -->
-    <aside class="panel">
-      <div class="panel-title">Productos</div>
+    <!-- FULL WIDTH: catálogo + ticket -->
+    <div class="main-content">
 
-      <div class="block" [formGroup]="form">
-        <label class="small">Almacén</label>
-        <select class="form-select form-control-lg" formControlName="almacen_id">
-          <option [ngValue]="null">Selecciona almacén...</option>
-          <option *ngFor="let a of almacenes()" [ngValue]="a.id">{{ a.descripcion }}</option>
-        </select>
-        <div class="text-danger small mt-1" *ngIf="backendError('almacen_id')">
-          {{ backendError('almacen_id') }}
-        </div>
-      </div>
+      <!-- LEFT: catálogo -->
+      <aside class="panel panel-catalog">
+        <div class="panel-header">
+          <div class="panel-title">Productos</div>
 
-      <!-- ✅ Filtros rápidos (sticky dentro del panel) -->
-      <div class="catalog-toolbar">
-        <div class="search-row">
-          <input
-            class="form-control form-control-lg"
-            [value]="articuloSearch()"
-            (input)="onGridSearch($any($event.target).value)"
-            placeholder="Buscar por nombre..."
-          />
-        </div>
-
-        <div class="cats-row" *ngIf="categorias().length">
-          <button
-            type="button"
-            class="cat-chip"
-            [class.active]="categoriaId()==='all'"
-            (click)="setCategoria('all')"
-          >
-            Todas
-          </button>
-
-          <button
-            type="button"
-            class="cat-chip"
-            *ngFor="let c of categorias()"
-            [class.active]="categoriaId()===c.id"
-            (click)="setCategoria(c.id)"
-          >
-            {{ c.descripcion }}
-          </button>
-        </div>
-
-        <div class="cats-row" *ngIf="!categorias().length">
-          <div class="muted-soft">Categorías no disponibles (por ahora).</div>
-        </div>
-      </div>
-
-      <div class="catalog-box" (scroll)="onGridScroll($event)">
-        <div *ngIf="gridLoading()" class="muted big">Cargando catálogo...</div>
-
-        <div class="art-grid" *ngIf="!gridLoading()">
-          <button type="button" class="art-tile" *ngFor="let a of gridItems()" (click)="selectArticulo(a)">
-            <div class="img">
-              <img [src]="imgSrc(a)" [alt]="a.nombre" />
+          <!-- Filtros rápidos -->
+          <div class="catalog-toolbar">
+            <div class="search-row">
+              <input class="form-control form-control-sm" [value]="articuloSearch()"
+                (input)="onGridSearch($any($event.target).value)" placeholder="Buscar por nombre..." autocomplete="off"
+                spellcheck="false" />
             </div>
-            <div class="info">
-              <div class="name">{{ a.nombre }}</div>
-              <div class="meta text-muted">
-                {{ a.categoria?.descripcion || ('Cat #' + a.categoria_id) }} • {{ a.unidad }}
+
+            <div class="cats-row" *ngIf="categorias().length">
+              <button type="button" class="cat-chip" [class.active]="categoriaId()==='all'"
+                (click)="setCategoria('all')">
+                Todas
+              </button>
+
+              <button type="button" class="cat-chip" *ngFor="let c of categorias(); trackBy: trackByCategoriaId"
+                [class.active]="categoriaId()===c.id" (click)="setCategoria(c.id)">
+                {{ c.descripcion }}
+              </button>
+            </div>
+
+            <div class="cats-row" *ngIf="!categorias().length">
+              <div class="muted-soft">Categorías no disponibles (por ahora).</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-body">
+          <div class="catalog-box" (scroll)="onGridScroll($event)">
+            <div *ngIf="gridLoading()" class="muted big">Cargando catálogo...</div>
+
+            <div class="art-grid" *ngIf="!gridLoading()">
+              <button type="button" class="art-tile" *ngFor="let a of gridItems(); trackBy: trackByArticuloId" (click)="selectArticulo(a)">
+                <div class="img">
+                  <img [src]="imgSrc(a)" [alt]="a.nombre" loading="lazy" decoding="async" />
+                </div>
+                <div class="info">
+                  <div class="name">{{ a.nombre }}</div>
+                  <div class="meta text-muted">
+                    {{ a.categoria?.descripcion || ('Cat #' + a.categoria_id) }}
+                  </div>
+                </div>
+              </button>
+
+              <div *ngIf="!gridItems().length" class="muted big">
+                No hay artículos con ese filtro.
               </div>
             </div>
-          </button>
 
-          <div *ngIf="!gridItems().length" class="muted big">
-            No hay artículos con ese filtro.
+            <div class="load-more" *ngIf="gridLoadingMore()">
+              Cargando más...
+            </div>
+
+            <div class="load-more done" *ngIf="!gridLoadingMore() && gridPage()>=gridLastPage() && gridItems().length">
+              Fin del catálogo ({{ gridTotal() }} artículos)
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- CENTER: ticket -->
+      <main class="panel panel-ticket">
+        <div class="panel-header">
+          <div class="panel-title">Ticket</div>
+          <div class="ticket-count" *ngIf="cart().length">
+            {{ cart().length }} {{ cart().length === 1 ? 'artículo' : 'artículos' }}
           </div>
         </div>
 
-        <div class="load-more" *ngIf="gridLoadingMore()">
-          Cargando más...
-        </div>
+        <div class="panel-body">
+          <div class="ticket-section">
+            <div *ngIf="cart().length; else emptyTicket" class="ticket">
+              <div class="ticket-item" *ngFor="let x of cart(); trackBy: trackByKey"
+                [class.ticket-item-warn]="isOverStock(x) || isBelowMinPrice(x)">
 
-        <div class="load-more done" *ngIf="!gridLoadingMore() && gridPage()>=gridLastPage() && gridItems().length">
-          Fin del catálogo ({{ gridTotal() }} artículos)
-        </div>
-      </div>
+                <!-- Header del item -->
+                <div class="item-header">
+                  <div class="item-info">
+                    <div class="item-name">{{ x.lote.articulo?.nombre || ('Artículo #' + x.articulo_id) }}</div>
+                    <div class="item-badges">
+                      <span class="badge badge-lote">Lote #{{ x.lote_id }}</span>
+                      <span class="badge badge-variedad" *ngIf="x.lote.variedad">{{ x.lote.variedad }}</span>
+                      <span class="badge badge-stock">Stock: {{ x.lote.existencia }} {{ x.lote.articulo?.unidad
+                        }}</span>
+                      <span class="badge badge-empaque" *ngIf="x.lote.empaque && +x.lote.empaque > 0">
+                        Empaque: {{ x.lote.empaque }}
+                      </span>
+                    </div>
+                  </div>
+                  <button type="button" class="btn-remove" (click)="removeLine(x.key)" title="Quitar"
+                    aria-label="Quitar artículo del ticket">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
 
-      <!-- Lotes -->
-      <div class="block">
-        <label class="small">Variedad</label>
-        <div class="rowg">
-          <input
-            class="form-control form-control-lg"
-            [value]="variedadSearch()"
-            (input)="variedadSearch.set($any($event.target).value)"
-            placeholder="Ej: Roja / Verde..."
-          />
-          <button class="btn btn-outline-secondary btn-lg" type="button" (click)="refreshLotes()">
-            Buscar
-          </button>
-        </div>
-      </div>
+                <!-- Controles de cantidad y precio -->
+                <div class="item-controls">
+                  <div class="control-group qty-group">
+                    <label class="control-label">Cantidad</label>
+                    <div class="qty-control">
+                      <button type="button" class="qty-btn" (click)="bumpQty(x.key, -1)"
+                        aria-label="Disminuir cantidad">−</button>
+                      <input class="qty-input" type="text" inputmode="decimal" autocomplete="off" spellcheck="false"
+                        [value]="cantidadView(x.key, x.cantidad)" (input)="setQty(x.key, $any($event.target).value)"
+                        (blur)="commitQty(x.key)" />
+                      <button type="button" class="qty-btn" (click)="bumpQty(x.key, +1)"
+                        aria-label="Aumentar cantidad">+</button>
+                    </div>
+                  </div>
 
-      <div class="block">
-        <div class="panel-subtitle">
-          Lotes disponibles
-          <span class="text-muted" *ngIf="selectedArticulo()">— {{ selectedArticulo()?.nombre }}</span>
-        </div>
+                  <div class="control-group price-group">
+                    <label class="control-label">Precio unitario <span class="price-hint">· Mín: {{ money(+x.lote.precio_min || 0) }}</span></label>
+                    <input class="price-input" type="text" inputmode="decimal" autocomplete="off" spellcheck="false"
+                      [value]="precioView(x.key, x.precio)" (input)="setPrecio(x.key, $any($event.target).value)"
+                      (blur)="commitPrecio(x.key)" />
+                  </div>
 
-        <div *ngIf="loadingLotes()" class="muted">Cargando lotes...</div>
+                  <div class="control-group sub-group">
+                    <label class="control-label">Subtotal</label>
+                    <div class="subtotal-display">{{ money(x.cantidad * x.precio) }}</div>
+                  </div>
+                </div>
 
-        <div class="lotes" *ngIf="!loadingLotes()">
-          <button type="button" class="lote" *ngFor="let l of lotes()" (click)="addLote(l)">
-            <div class="left">
-              <div class="name">{{ l.articulo?.nombre || ('Artículo #' + l.articulo_id) }}</div>
-              <div class="meta">
-                <span class="pill">Var: {{ l.variedad || '-' }}</span>
-                <span class="pill">Disp: {{ l.existencia }} {{ l.articulo?.unidad || '' }}</span>
-                <span class="pill">Min: {{ money(+l.precio_min || 0) }}</span>
+                <!-- Alertas -->
+                <div class="item-alerts" *ngIf="isOverStock(x) || isBelowMinPrice(x)">
+                  <div class="alert-message" *ngIf="isOverStock(x)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="12" />
+                      <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                    Excede existencia disponible (máx {{ x.lote.existencia }})
+                  </div>
+                  <div class="alert-message" *ngIf="isBelowMinPrice(x)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="12" />
+                      <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                    Precio por debajo del mínimo permitido
+                  </div>
+                </div>
               </div>
             </div>
-            <div class="right">
-              <div class="price">{{ money(+l.precio || 0) }}</div>
-              <div class="add">Agregar</div>
-            </div>
-          </button>
 
-          <div *ngIf="!lotes().length" class="muted-soft">
-            Selecciona un artículo para ver lotes.
+            <ng-template #emptyTicket>
+              <div class="empty-ticket">
+                <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path
+                    d="M9 2a1 1 0 0 0-1 1v1H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V3a1 1 0 1 0-2 0v1H10V3a1 1 0 0 0-1-1z" />
+                  <path d="M4 9h16" />
+                </svg>
+                <div class="empty-text">El ticket está vacío</div>
+                <div class="empty-hint">Selecciona artículos del catálogo para comenzar</div>
+              </div>
+            </ng-template>
           </div>
         </div>
-      </div>
-    </aside>
+      </main>
+    </div>
 
-    <!-- CENTER: ticket -->
-    <main class="panel">
-      <div class="panel-title">Ticket</div>
+  </section>
 
-      <div *ngIf="cart().length; else emptyTicket" class="ticket">
-        <div class="line" *ngFor="let x of cart()"
-             [class.line-warn]="isOverStock(x) || isBelowMinPrice(x)">
-          <div class="l">
-            <div class="name">{{ x.lote.articulo?.nombre || ('Artículo #' + x.articulo_id) }}</div>
-            <div class="meta">
-              <span class="pill">Lote {{ x.lote_id }}</span>
-              <span class="pill">Var {{ x.lote.variedad || '-' }}</span>
-            </div>
-          </div>
+  <!-- Botón flotante para abrir resumen (todos los dispositivos) -->
+  <button class="cart-fab" *ngIf="!showCheckout()" (click)="showCheckout.set(true)" aria-label="Abrir resumen de venta">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="9" cy="21" r="1" />
+      <circle cx="20" cy="21" r="1" />
+      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+    </svg>
+    <span class="cart-badge" *ngIf="cart().length">{{ cart().length }}</span>
+  </button>
 
-          <div class="m">
-            <div class="qty">
-              <button type="button" class="qbtn" (click)="bumpQty(x.key, -1)">−</button>
-              <input class="qinput" inputmode="decimal" [value]="x.cantidad"
-                     (input)="setQty(x.key, $any($event.target).value)" />
-              <button type="button" class="qbtn" (click)="bumpQty(x.key, +1)">+</button>
-            </div>
-          </div>
+  <!-- Backdrop para cerrar (solo móvil/tablet) -->
+  <div class="checkout-backdrop mobile-only" *ngIf="showCheckout()" (click)="showCheckout.set(false)"></div>
 
-          <div class="r">
-            <label class="small">Precio</label>
-            <input class="form-control form-control-lg price" inputmode="decimal"
-                   [value]="x.precio"
-                   (input)="setPrecio(x.key, $any($event.target).value)" />
+  <div class="checkout-sidebar" [class.show]="showCheckout()">
+    <div class="checkout-header">
+      <div class="checkout-title">Resumen de Venta</div>
+      <button type="button" class="btn-close-checkout" (click)="showCheckout.set(false)"
+        aria-label="Cerrar resumen de venta">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6L6 18M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
 
-            <div class="ltotal">{{ money(x.cantidad * x.precio) }}</div>
-
-            <div class="warn" *ngIf="isOverStock(x)">
-              Excede existencia (máx {{ x.lote.existencia }}).
-            </div>
-
-            <div class="warn" *ngIf="isBelowMinPrice(x)">
-              Precio mínimo: {{ money(+x.lote.precio_min || 0) }}.
-            </div>
-
-            <button type="button" class="btn btn-outline-danger btn-sm mt-2" (click)="removeLine(x.key)">
-              Quitar
-            </button>
-          </div>
-        </div>
+    <div class="checkout-body">
+      <div class="checkout-section" [formGroup]="form">
+        <label class="checkout-label">Fecha</label>
+        <input class="form-control form-control-sm" type="date" formControlName="fecha" autocomplete="off" />
       </div>
 
-      <ng-template #emptyTicket>
-        <div class="muted big">Agrega artículos desde el catálogo o lotes.</div>
-      </ng-template>
-    </main>
-
-    <!-- RIGHT: cobro -->
-    <aside class="panel">
-      <div class="panel-title">Cobro</div>
-
-      <div class="block" [formGroup]="form">
-        <label class="small">Fecha</label>
-        <input class="form-control form-control-lg" type="date" formControlName="fecha" />
-      </div>
-
-      <div class="block">
-        <label class="small">Cliente</label>
-        <input class="form-control form-control-lg"
-               [value]="clienteSearch()"
-               (input)="onClienteSearch($any($event.target).value)"
-               placeholder="Nombre o teléfono..." />
+      <div class="checkout-section">
+        <label class="checkout-label">Cliente</label>
+        <input class="form-control form-control-sm" [value]="clienteSearch()"
+          (input)="onClienteSearch($any($event.target).value)" placeholder="Nombre o teléfono..." autocomplete="off"
+          spellcheck="false" />
 
         <div class="suggest" *ngIf="clientesFound().length">
-          <button type="button" class="suggest-item"
-                  *ngFor="let c of clientesFound()"
-                  (click)="selectCliente(c)">
+          <button type="button" class="suggest-item" *ngFor="let c of clientesFound()" (click)="selectCliente(c)">
             <div class="s-title">{{ c.nombre }}</div>
             <div class="s-sub text-muted">{{ c.telefono || 'Sin teléfono' }}</div>
           </button>
@@ -223,9 +241,9 @@
         </div>
       </div>
 
-      <div class="block" [formGroup]="form">
-        <label class="small">Forma de pago</label>
-        <select class="form-select form-control-lg" formControlName="f_pago_id">
+      <div class="checkout-section" [formGroup]="form">
+        <label class="checkout-label">Forma de pago</label>
+        <select class="form-select form-select-sm" formControlName="f_pago_id">
           <option [ngValue]="null">Selecciona...</option>
           <option *ngFor="let f of formasPago()" [ngValue]="f.id">{{ f.descripcion }}</option>
         </select>
@@ -234,18 +252,15 @@
         </div>
       </div>
 
-      <div class="block" [formGroup]="form">
-        <div class="rowg">
-          <label class="form-check bigcheck">
+      <div class="checkout-section" [formGroup]="form">
+        <div class="credit-row">
+          <label class="form-check checkout-check">
             <input class="form-check-input" type="checkbox" formControlName="credito" />
             <span class="form-check-label">Crédito</span>
           </label>
 
-          <input class="form-control form-control-lg"
-                 type="number" min="1"
-                 placeholder="Días"
-                 formControlName="dias_credito"
-                 [disabled]="!form.value.credito" />
+          <input class="form-control form-control-sm credit-days" type="number" min="1" inputmode="numeric"
+            placeholder="Días" formControlName="dias_credito" [disabled]="!form.value.credito" />
         </div>
 
         <div class="text-danger small mt-1" *ngIf="backendError('dias_credito')">
@@ -253,17 +268,104 @@
         </div>
       </div>
 
-      <div class="totals">
-        <div class="row"><span>Subtotal</span><strong>{{ money(subtotal()) }}</strong></div>
-        <div class="row"><span>Impuestos</span><strong>{{ money(impuestos()) }}</strong></div>
-        <div class="row total"><span>Total</span><strong>{{ money(total()) }}</strong></div>
+      <div class="checkout-totals">
+        <div class="total-row">
+          <span>Subtotal</span>
+          <strong>{{ money(subtotal()) }}</strong>
+        </div>
+        <div class="total-row">
+          <span>Impuestos</span>
+          <strong>{{ money(impuestos()) }}</strong>
+        </div>
+        <div class="total-row total-final">
+          <span>Total</span>
+          <strong>{{ money(total()) }}</strong>
+        </div>
       </div>
+    </div>
 
-      <button class="btn btn-primary btn-lg w-100 pay-btn" type="button"
-              (click)="submitVenta()" [disabled]="!canSubmit()">
+    <div class="checkout-footer">
+      <button class="btn btn-primary btn-lg w-100 checkout-btn" type="button" (click)="submitVenta()"
+        [disabled]="!canSubmit()">
         {{ saving() ? 'Guardando...' : 'Cobrar / Guardar' }}
       </button>
-    </aside>
+    </div>
+  </div>
 
-  </section>
-</div>
+  <!-- Modal de Lotes -->
+  <div class="modal-backdrop" *ngIf="showLotesModal()" (click)="closeLotesModal()"></div>
+
+  <div class="lotes-modal" *ngIf="showLotesModal()">
+    <div class="modal-header">
+      <div class="modal-title">
+        <div class="title">Selecciona un lote</div>
+        <div class="subtitle" *ngIf="selectedArticulo()">
+          {{ selectedArticulo()?.nombre }}
+        </div>
+      </div>
+      <button type="button" class="btn-close" (click)="closeLotesModal()" aria-label="Cerrar selección de lote">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6L6 18M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div *ngIf="loadingLotes()" class="muted">Cargando lotes...</div>
+
+      <div class="lotes-list" *ngIf="!loadingLotes()">
+        <button type="button" class="lote-item" *ngFor="let l of lotes(); trackBy: trackByLoteId" (click)="selectLote(l)">
+          <div class="lote-main">
+            <div class="lote-info">
+              <div class="lote-variedad">{{ l.variedad || 'Sin variedad' }}</div>
+              <div class="lote-meta">
+                <span class="pill">Lote #{{ l.id }}</span>
+                <span class="pill">Disponible: {{ l.existencia }} {{ l.articulo?.unidad || '' }}</span>
+              </div>
+            </div>
+            <div class="lote-pricing">
+              <div class="precio-venta">{{ money(+l.precio || 0) }}</div>
+              <div class="precio-min">Mín: {{ money(+l.precio_min || 0) }}</div>
+            </div>
+          </div>
+        </button>
+
+        <div *ngIf="!lotes().length" class="empty-state">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+          </svg>
+          <div class="empty-text">No hay lotes disponibles para este artículo</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Confirmación Personalizado -->
+  <div class="confirm-backdrop" *ngIf="confirmOpen()" (click)="cancelConfirm()"></div>
+  
+  <div class="confirm-modal" *ngIf="confirmOpen()">
+    <div class="confirm-header">
+      <div class="confirm-icon">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+      </div>
+      <div class="confirm-title">{{ confirmTitle() }}</div>
+    </div>
+
+    <div class="confirm-body">
+      <div class="confirm-message">{{ confirmMessage() }}</div>
+      <div class="confirm-sub" *ngIf="confirmSub()">{{ confirmSub() }}</div>
+    </div>
+
+    <div class="confirm-footer">
+      <button type="button" class="btn btn-secondary btn-lg" (click)="cancelConfirm()">
+        Cancelar
+      </button>
+      <button type="button" class="btn btn-danger btn-lg" (click)="acceptConfirm()">
+        {{ confirmAcceptText() }}
+      </button>
+    </div>
+  </div>
