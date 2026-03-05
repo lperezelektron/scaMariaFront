@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -12,6 +12,7 @@ import { FormasPagoService } from '../../../../catalog/formas-pago/data/formas-p
 import { AlmacenesService } from '../../../../settings/pages/almacenes/data/almacenes.service';
 import { LoteDisponible, VentaDetallePayload, VentaStorePayload } from '../../data/ventas.models';
 import { VentasService } from '../../data/ventas.service';
+
 
 type FieldErrors = Record<string, string[]>;
 
@@ -33,6 +34,7 @@ type CartLine = {
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './pos-venta.component.html',
   styleUrl: './pos-venta.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PosVentaComponent {
   private fb = inject(FormBuilder);
@@ -46,9 +48,14 @@ export class PosVentaComponent {
   private formasPagoSvc = inject(FormasPagoService);
   private almacenesSvc = inject(AlmacenesService);
 
+  private precioDraft = new Map<string, string>();
+  private cantidadDraft = new Map<string, string>();
+
   // UI
   loadingLotes = signal(false);
   saving = signal(false);
+  showLotesModal = signal(false);
+  showCheckout = signal(true);
 
   banner = signal<{ type: 'success' | 'danger' | 'info'; text: string } | null>(null);
   fieldErrors = signal<FieldErrors>({});
@@ -72,7 +79,7 @@ export class PosVentaComponent {
 
   gridItems = signal<any[]>([]);
   gridPage = signal(1);
-  gridPerPage = signal(30); // carga por lotes, tablet-friendly
+  gridPerPage = signal(50); // aumentado para cargar más items por request
   gridLastPage = signal(1);
   gridTotal = signal(0);
   gridLoading = signal(false);
@@ -81,7 +88,6 @@ export class PosVentaComponent {
   private gridSearch$ = new Subject<string>();
 
   // Lotes
-  variedadSearch = signal('');
   lotes = signal<LoteDisponible[]>([]);
 
   // Ticket
@@ -97,9 +103,28 @@ export class PosVentaComponent {
     dias_credito: [null as number | null],
   });
 
-  // Totales
-  subtotal = computed(() => this.cart().reduce((acc, x) => acc + x.cantidad * x.precio, 0));
-  impuestos = computed(() => this.cart().reduce((acc, x) => acc + (x.impuestos ?? 0), 0));
+  // Signal para forzar re-evaluación de canSubmit
+  private formTouched = signal(0);
+
+  // Totales (optimizados)
+  subtotal = computed(() => {
+    const cart = this.cart();
+    let sum = 0;
+    for (let i = 0; i < cart.length; i++) {
+      sum += cart[i].cantidad * cart[i].precio;
+    }
+    return sum;
+  });
+  
+  impuestos = computed(() => {
+    const cart = this.cart();
+    let sum = 0;
+    for (let i = 0; i < cart.length; i++) {
+      sum += cart[i].impuestos ?? 0;
+    }
+    return sum;
+  });
+  
   total = computed(() => this.subtotal() + this.impuestos());
 
   linesCount = computed(() => this.cart().length);
@@ -127,25 +152,54 @@ export class PosVentaComponent {
   });
 
   canSubmit = computed(() => {
+    // Incluir formTouched para forzar re-evaluación
+    this.formTouched();
+    
+    // Early returns para evitar cálculos innecesarios
     if (this.saving()) return false;
-    if (this.cart().length === 0) return false;
+    
+    const cartLength = this.cart().length;
+    if (cartLength === 0) return false;
+    
     if (this.form.invalid) return false;
 
-    const credito = !!this.form.value.credito;
-    if (credito && !(this.form.value.dias_credito && this.form.value.dias_credito > 0)) return false;
+    const credito = this.form.value.credito;
+    const diasCredito = this.form.value.dias_credito;
+    if (credito && (!diasCredito || diasCredito <= 0)) return false;
 
-    // reglas POS
-    const invalidLine = this.cart().some(line =>
-      line.cantidad <= 0 ||
-      line.cantidad > this.toNumber(line.lote.existencia) ||
-      line.precio < this.toNumber(line.lote.precio_min)
-    );
+    // Validación de líneas del carrito (optimizada)
+    const cart = this.cart();
+    for (let i = 0; i < cartLength; i++) {
+      const line = cart[i];
+      const cantidad = line.cantidad;
+      const existencia = +line.lote.existencia || 0;
+      const precioMin = +line.lote.precio_min || 0;
+      
+      if (cantidad <= 0 || cantidad > existencia || line.precio < precioMin) {
+        return false;
+      }
+    }
 
-    return !invalidLine;
+    return true;
   });
+
+  confirmOpen = signal(false);
+  confirmTitle = signal('Confirmar acción');
+  confirmMessage = signal('');
+  confirmSub = signal<string | null>(null);
+  confirmAcceptText = signal('Eliminar');
+
+  private pendingConfirmAction: (() => void) | null = null;
 
   constructor() {
     this.loadCatalogos();
+
+    // Forzar re-evaluación de canSubmit cuando cambie el form
+    this.form.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.formTouched.update(v => v + 1);
+      });
 
     // crédito -> requiere días
     this.form.controls.credito.valueChanges
@@ -162,12 +216,12 @@ export class PosVentaComponent {
 
     // búsqueda live clientes
     this.clienteSearch$
-      .pipe(debounceTime(250), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .pipe(debounceTime(150), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
       .subscribe((q) => this.searchClientes(q));
 
     // búsqueda live artículos
     this.gridSearch$
-      .pipe(debounceTime(200), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .pipe(debounceTime(150), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
       .subscribe((q) => {
         this.articuloSearch.set(q);
         this.resetGridAndLoad();
@@ -203,25 +257,34 @@ export class PosVentaComponent {
           this.form.patchValue({ almacen_id: rows[0].id });
         }
       },
+      error: () => {
+        // silencioso, no bloquear el POS
+      }
     });
 
     // formas pago
     this.formasPagoSvc.list().subscribe({
       next: (rows) => this.formasPago.set(rows ?? []),
+      error: () => {
+        // silencioso
+      }
     });
 
-    // ✅ categorías reales (arregla tu bug)
-    // asumo que categoriasSvc.list() existe (como en Artículos)
+    // categorías (con manejo de errores mejorado)
     this.categoriasSvc.list?.().subscribe?.({
       next: (rows: any) => {
         const data = Array.isArray(rows) ? rows : (rows?.data ?? []);
-        const mapped = (data ?? []).map((c: any) => ({ id: Number(c.id), descripcion: String(c.descripcion ?? c.nombre ?? '') }))
+        const mapped = (data ?? [])
+          .map((c: any) => ({ 
+            id: Number(c.id), 
+            descripcion: String(c.descripcion ?? c.nombre ?? '') 
+          }))
           .filter((c: any) => !!c.id && !!c.descripcion);
+        
         mapped.sort((a: any, b: any) => a.descripcion.localeCompare(b.descripcion, 'es'));
         this.categorias.set(mapped);
       },
       error: () => {
-        // si falla, no rompemos el POS: solo no habrá chips
         this.categorias.set([]);
       },
     });
@@ -233,6 +296,7 @@ export class PosVentaComponent {
   }
 
   setCategoria(id: number | 'all') {
+    if (this.categoriaId() === id) return; // evitar reset si es la misma categoría
     this.categoriaId.set(id);
     this.resetGridAndLoad();
   }
@@ -291,8 +355,8 @@ export class PosVentaComponent {
     const el = ev.target as HTMLElement;
     if (!el) return;
 
-    // threshold
-    const nearBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 180;
+    // threshold más agresivo para cargar antes
+    const nearBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 100;
     if (!nearBottom) return;
 
     if (this.gridLoading() || this.gridLoadingMore()) return;
@@ -318,7 +382,19 @@ export class PosVentaComponent {
 
     this.banner.set(null);
     this.selectedArticulo.set(a);
+    this.showLotesModal.set(true);
+    
+    // Cargar lotes inmediatamente sin esperar
     this.loadLotes(a.id);
+  }
+
+  closeLotesModal() {
+    this.showLotesModal.set(false);
+  }
+
+  selectLote(l: LoteDisponible) {
+    this.addLote(l);
+    this.closeLotesModal();
   }
 
   refreshLotes() {
@@ -337,7 +413,7 @@ export class PosVentaComponent {
       .lotesDisponibles({
         almacen_id: almacenId,
         articulo_id: articuloId,
-        variedad: this.variedadSearch() || null,
+        variedad: null, // Ya no usamos búsqueda de variedad
       })
       .subscribe({
         next: (rows) => {
@@ -367,11 +443,15 @@ export class PosVentaComponent {
       return;
     }
 
-    this.clientesSvc.list({ search: s, per_page: 10, page: 1, activo: true }).subscribe({
+    this.clientesSvc.list({ search: s, per_page: 8, page: 1, activo: true }).subscribe({
       next: (res: any) => {
         const data = Array.isArray(res) ? res : (res?.data ?? []);
         this.clientesFound.set(data);
       },
+      error: () => {
+        // silencioso, no mostrar error en búsqueda
+        this.clientesFound.set([]);
+      }
     });
   }
 
@@ -408,54 +488,235 @@ export class PosVentaComponent {
   }
 
   removeLine(key: string) {
-    this.cart.set(this.cart().filter((x) => x.key !== key));
+    const line = this.cart().find((x) => x.key === key);
+    if (!line) return;
+
+    const nombre = line?.lote?.articulo?.nombre ?? 'este artículo';
+
+    this.openConfirm({
+      title: 'Eliminar artículo',
+      message: `¿Seguro que quieres eliminar "${nombre}" del ticket?`,
+      sub: 'Esta acción no se puede deshacer.',
+      acceptText: 'Eliminar',
+      onAccept: () => {
+        this.cart.set(this.cart().filter((x) => x.key !== key));
+        this.cantidadDraft.delete(key);
+        this.precioDraft.delete(key);
+      },
+    });
   }
 
   bumpQty(key: string, delta: number) {
     const line = this.cart().find((x) => x.key === key);
     if (!line) return;
-    this.setQty(key, line.cantidad + delta);
+
+    const current = Number(line.cantidad) || 0;
+    const next = current + delta;
+
+    if (next <= 0) {
+      const nombre = line?.lote?.articulo?.nombre ?? 'este artículo';
+
+      this.openConfirm({
+        title: 'Eliminar artículo',
+        message: `La cantidad quedará en 0. ¿Quieres eliminar "${nombre}" del ticket?`,
+        sub: 'También puedes cancelar y ajustar la cantidad manualmente.',
+        acceptText: 'Eliminar',
+        onAccept: () => {
+          this.cart.set(this.cart().filter((x) => x.key !== key));
+        },
+      });
+
+      return;
+    }
+
+    this.cart.set(
+      this.cart().map((x) => (x.key === key ? { ...x, cantidad: this.round2(next) } : x)),
+    );
   }
 
   private maxStock(line: CartLine): number {
-    return this.toNumber(line.lote.existencia);
+    return +line.lote.existencia || 0;
   }
 
   isOverStock(line: CartLine): boolean {
-    return line.cantidad > this.maxStock(line);
+    return line.cantidad > (+line.lote.existencia || 0);
   }
 
   isBelowMinPrice(line: CartLine): boolean {
-    const min = this.toNumber(line.lote.precio_min);
-    return line.precio < min;
+    return line.precio < (+line.lote.precio_min || 0);
   }
 
   setQty(key: string, raw: any) {
     const line = this.cart().find((x) => x.key === key);
     if (!line) return;
 
-    let qty = Math.max(0, this.toNumber(raw));
+    const s = String(raw ?? '');
+    
+    // Guardamos el draft
+    this.cantidadDraft.set(key, s);
 
-    const max = this.maxStock(line);
-    if (qty > max) qty = max;
+    // Intentamos parsear
+    const normalized = s.replace(',', '.').trim();
 
-    const next = this.cart()
-      .map((x) => (x.key === key ? { ...x, cantidad: qty } : x))
-      .filter((x) => x.cantidad > 0);
+    // Estados intermedios
+    if (
+      normalized === '' ||
+      normalized === '.' ||
+      normalized === '-' ||
+      normalized === '-.' ||
+      normalized.endsWith('.')
+    ) {
+      return;
+    }
 
-    this.cart.set(next);
+    const n = Number(normalized);
+    if (!Number.isFinite(n)) return;
+
+    if (n <= 0) {
+      const nombre = line?.lote?.articulo?.nombre ?? 'este artículo';
+
+      this.openConfirm({
+        title: 'Eliminar artículo',
+        message: `La cantidad quedará en 0. ¿Quieres eliminar "${nombre}" del ticket?`,
+        sub: 'Si cancelas, no se aplicará el cambio.',
+        acceptText: 'Eliminar',
+        onAccept: () => {
+          this.cart.set(this.cart().filter((x) => x.key !== key));
+          this.cantidadDraft.delete(key);
+        },
+      });
+
+      return;
+    }
+
+    const safe = Math.max(0, n);
+    
+    // Solo actualizar si cambió
+    if (line.cantidad !== safe) {
+      this.cart.set(
+        this.cart().map((x) => (x.key === key ? { ...x, cantidad: safe } : x)),
+      );
+    }
+  }
+
+  commitQty(key: string) {
+    const line = this.cart().find((x) => x.key === key);
+    if (!line) return;
+
+    const draft = this.cantidadDraft.get(key);
+    if (draft === undefined) {
+      this.cart.set(this.cart().map((x) => (x.key === key ? { ...x, cantidad: this.round2(Math.max(0, +x.cantidad || 0)) } : x)));
+      return;
+    }
+
+    const normalized = draft.replace(',', '.').trim();
+    const n = Number(normalized);
+
+    if (!Number.isFinite(n)) {
+      this.cantidadDraft.delete(key);
+      return;
+    }
+
+    const final = this.round2(Math.max(0.01, n));
+
+    this.cantidadDraft.delete(key);
+
+    if (line.cantidad !== final) {
+      this.cart.set(
+        this.cart().map((x) => (x.key === key ? { ...x, cantidad: final } : x)),
+      );
+    }
+  }
+
+  cantidadView(key: string, fallback: number) {
+    const d = this.cantidadDraft.get(key);
+    return d !== undefined ? d : String(fallback ?? 0);
   }
 
   setPrecio(key: string, raw: any) {
     const line = this.cart().find((x) => x.key === key);
     if (!line) return;
 
-    let p = Math.max(0, this.toNumber(raw));
+    const s = String(raw ?? '');
 
-    const min = this.toNumber(line.lote.precio_min);
-    if (p < min) p = min;
+    // guardamos lo que el usuario está tecleando, tal cual
+    this.precioDraft.set(key, s);
 
-    this.cart.set(this.cart().map((x) => (x.key === key ? { ...x, precio: p } : x)));
+    // Intentamos parsear SIN forzar formato (sin round2) para no brincar el cursor.
+    // Permitimos estados intermedios como: "", ".", "20.", "20,", "-".
+    const normalized = s.replace(',', '.').trim();
+
+    // Si está vacío o es un estado incompleto, no actualizamos el número todavía.
+    if (
+      normalized === '' ||
+      normalized === '.' ||
+      normalized === '-' ||
+      normalized === '-.' ||
+      normalized.endsWith('.')
+    ) {
+      return;
+    }
+
+    const p = Number(normalized);
+    if (!Number.isFinite(p)) return;
+
+    const safe = Math.max(0, p);
+
+    // Actualiza el precio numérico SIN redondear (para no “formatear” mientras escribe)
+    this.cart.set(
+      this.cart().map((x) => (x.key === key ? { ...x, precio: safe } : x)),
+    );
+  }
+
+  commitPrecio(key: string) {
+    const line = this.cart().find((x) => x.key === key);
+    if (!line) return;
+
+    const draft = this.precioDraft.get(key);
+    // si no hay draft, igual aseguramos round2 al valor actual
+    if (draft === undefined) {
+      this.cart.set(this.cart().map((x) => (x.key === key ? { ...x, precio: this.round2(Math.max(0, +x.precio || 0)) } : x)));
+      return;
+    }
+
+    const normalized = draft.replace(',', '.').trim();
+    const p = Number(normalized);
+
+    if (!Number.isFinite(p)) {
+      // si quedó algo raro, regresamos al valor numérico actual
+      this.precioDraft.delete(key);
+      return;
+    }
+
+    const final = this.round2(Math.max(0, p));
+
+    this.precioDraft.delete(key);
+
+    this.cart.set(
+      this.cart().map((x) => (x.key === key ? { ...x, precio: final } : x)),
+    );
+  }
+
+  precioView(key: string, fallback: number) {
+    const d = this.precioDraft.get(key);
+    return d !== undefined ? d : String(fallback ?? 0);
+  }
+
+  // TrackBy para evitar re-render completo del ngFor
+  trackByKey(index: number, item: CartLine): string {
+    return item.key;
+  }
+
+  trackByArticuloId(index: number, item: any): number {
+    return item.id;
+  }
+
+  trackByLoteId(index: number, item: LoteDisponible): number {
+    return item.id;
+  }
+
+  trackByCategoriaId(index: number, item: any): number {
+    return item.id;
   }
 
   // ====== Guardar ======
@@ -503,7 +764,6 @@ export class PosVentaComponent {
 
         this.cart.set([]);
         this.lotes.set([]);
-        this.variedadSearch.set('');
         this.selectedArticulo.set(null);
 
         this.clienteSearch.set('');
@@ -556,5 +816,32 @@ export class PosVentaComponent {
       delete errs[field];
       this.fieldErrors.set(errs);
     }
+  }
+
+  openConfirm(opts: {
+    title?: string;
+    message: string;
+    sub?: string | null;
+    acceptText?: string;
+    onAccept: () => void;
+  }) {
+    this.confirmTitle.set(opts.title ?? 'Confirmar acción');
+    this.confirmMessage.set(opts.message);
+    this.confirmSub.set(opts.sub ?? null);
+    this.confirmAcceptText.set(opts.acceptText ?? 'Aceptar');
+    this.pendingConfirmAction = opts.onAccept;
+    this.confirmOpen.set(true);
+  }
+
+  cancelConfirm() {
+    this.pendingConfirmAction = null;
+    this.confirmOpen.set(false);
+  }
+
+  acceptConfirm() {
+    const action = this.pendingConfirmAction;
+    this.pendingConfirmAction = null;
+    this.confirmOpen.set(false);
+    action?.();
   }
 }
