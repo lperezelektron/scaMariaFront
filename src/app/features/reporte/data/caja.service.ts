@@ -1,0 +1,42 @@
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { CajaIndexResponse, CorteCaja } from './caja.models';
+import { environment } from '../../../../enviroments/environment';
+
+export interface CajaQuery {
+  fecha?: string;
+  tipo?: string;
+}
+
+export interface CortesQuery {
+  mes?: number;
+  anio?: number;
+  per_page?: number;
+}
+
+@Injectable({ providedIn: 'root' })
+export class CajaService {
+  private base = environment.apiBaseUrl;
+
+  constructor(private http: HttpClient) {}
+
+  index(q: CajaQuery = {}): Observable<CajaIndexResponse> {
+    let params = new HttpParams();
+    if (q.fecha) params = params.set('fecha', q.fecha);
+    if (q.tipo)  params = params.set('tipo', q.tipo);
+    return this.http.get<CajaIndexResponse>(`${this.base}/api/caja`, { params });
+  }
+
+  cortes(q: CortesQuery = {}): Observable<CorteCaja[]> {
+    let params = new HttpParams();
+    if (q.mes)      params = params.set('mes', q.mes);
+    if (q.anio)     params = params.set('anio', q.anio);
+    if (q.per_page) params = params.set('per_page', q.per_page);
+    return this.http.get<CorteCaja[]>(`${this.base}/api/caja/cortes`, { params });
+  }
+
+  showCorte(id: number): Observable<CorteCaja> {
+    return this.http.get<CorteCaja>(`${this.base}/api/caja/cortes/${id}`);
+  }
+}

@@ -4,6 +4,7 @@ dist/
 .angular/
 .cache/
 out-tsc/
+.claude/
 
 # Logs
 npm-debug.log*

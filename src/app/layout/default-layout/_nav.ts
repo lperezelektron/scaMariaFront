@@ -22,7 +22,7 @@ export const navItems: INavDataPerm[] = [
   },
   {
     name: 'Caja',
-    url: '/operation/caja',
+    url: '/reporte/caja',
     iconComponent: { name: 'cil-dollar' },
     permissions: ['caja.ver', 'caja.movimiento', 'caja.corte'],
   },

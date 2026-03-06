@@ -24,6 +24,11 @@ export class ArticuloFormComponent {
   articuloId: number | null = null;
   mode: 'create' | 'edit' = 'create';
 
+  // imagen
+  imagenFile: File | null = null;
+  imagenPreview = signal<string | null>(null);
+  imagenActual = signal<string | null>(null);
+
   // errores 422 por campo
   fieldErrors = signal<FieldErrors>({});
 
@@ -75,6 +80,7 @@ export class ArticuloFormComponent {
           categoria_id: a?.categoria_id ?? null,
           activo: !!a?.activo,
         });
+        this.imagenActual.set(a?.imagen ?? null);
         this.fieldErrors.set({});
         this.loading.set(false);
       },
@@ -83,6 +89,19 @@ export class ArticuloFormComponent {
         this.router.navigateByUrl('/404');
       },
     });
+  }
+
+  onImageChange(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0] ?? null;
+    this.imagenFile = file;
+
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => this.imagenPreview.set(e.target?.result as string);
+      reader.readAsDataURL(file);
+    } else {
+      this.imagenPreview.set(null);
+    }
   }
 
   // helpers para errores
@@ -114,18 +133,18 @@ export class ArticuloFormComponent {
 
     const raw = this.form.getRawValue();
 
-    const payload = {
-      nombre: raw.nombre ?? '',
-      nombre_corto: raw.nombre_corto ?? '',
-      unidad: raw.unidad ?? '',
-      categoria_id: Number(raw.categoria_id),
-      activo: !!raw.activo,
-    };
+    const fd = new FormData();
+    fd.append('nombre', (raw.nombre ?? '').trim());
+    fd.append('nombre_corto', (raw.nombre_corto ?? '').trim());
+    fd.append('unidad', raw.unidad ?? '');
+    fd.append('categoria_id', String(Number(raw.categoria_id)));
+    fd.append('activo', raw.activo ? '1' : '0');
+    if (this.imagenFile) fd.append('imagen', this.imagenFile);
 
     const req =
       this.mode === 'create'
-        ? this.articulosSvc.create(payload)
-        : this.articulosSvc.update(this.articuloId!, payload);
+        ? this.articulosSvc.create(fd)
+        : this.articulosSvc.update(this.articuloId!, fd);
 
     req.subscribe({
       next: () => {

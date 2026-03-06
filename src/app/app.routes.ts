@@ -68,6 +68,12 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/settings/settings.routes').then((m) => m.routes),
       },
+      {
+        path: 'reporte',
+        canMatch: [permissionMatch('caja.ver')],
+        loadChildren: () =>
+          import('./features/reporte/reporte.routes').then((m) => m.routes),
+      },
     ],
   },
   {
