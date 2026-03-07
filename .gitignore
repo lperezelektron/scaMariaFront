@@ -5,6 +5,7 @@ dist/
 .cache/
 out-tsc/
 .claude/
+Accesos/
 
 # Logs
 npm-debug.log*
