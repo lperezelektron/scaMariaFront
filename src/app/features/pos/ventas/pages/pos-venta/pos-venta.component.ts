@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal, ChangeDetectionStrategy, HostListener, effect } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
+import { RouterLink } from '@angular/router';
+import { debounceTime, distinctUntilChanged, Subject, interval } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { ArticulosService } from '../../../../catalog/articulos/data/articulos.service';
@@ -31,7 +32,7 @@ type CartLine = {
 @Component({
   selector: 'app-pos-venta',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './pos-venta.component.html',
   styleUrl: './pos-venta.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -115,7 +116,7 @@ export class PosVentaComponent {
     }
     return sum;
   });
-  
+
   impuestos = computed(() => {
     const cart = this.cart();
     let sum = 0;
@@ -124,7 +125,7 @@ export class PosVentaComponent {
     }
     return sum;
   });
-  
+
   total = computed(() => this.subtotal() + this.impuestos());
 
   linesCount = computed(() => this.cart().length);
@@ -154,28 +155,27 @@ export class PosVentaComponent {
   canSubmit = computed(() => {
     // Incluir formTouched para forzar re-evaluación
     this.formTouched();
-    
+
     // Early returns para evitar cálculos innecesarios
     if (this.saving()) return false;
-    
+
     const cartLength = this.cart().length;
     if (cartLength === 0) return false;
-    
+
     if (this.form.invalid) return false;
 
     const credito = this.form.value.credito;
     const diasCredito = this.form.value.dias_credito;
     if (credito && (!diasCredito || diasCredito <= 0)) return false;
 
-    // Validación de líneas del carrito (optimizada)
+    // Validación de líneas del carrito (solo stock, precio no editable)
     const cart = this.cart();
     for (let i = 0; i < cartLength; i++) {
       const line = cart[i];
       const cantidad = line.cantidad;
       const existencia = +line.lote.existencia || 0;
-      const precioMin = +line.lote.precio_min || 0;
-      
-      if (cantidad <= 0 || cantidad > existencia || line.precio < precioMin) {
+
+      if (cantidad <= 0 || cantidad > existencia) {
         return false;
       }
     }
@@ -193,6 +193,26 @@ export class PosVentaComponent {
 
   constructor() {
     this.loadCatalogos();
+
+    // Timer para reloj
+    interval(1000)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        // Forzar actualización del reloj cada segundo
+        this.formTouched.update(v => v);
+      });
+
+    // Timer para auto-ocultar banner (usando effect)
+    effect(() => {
+      const b = this.banner();
+      if (b) {
+        setTimeout(() => {
+          if (this.banner() === b) {
+            this.banner.set(null);
+          }
+        }, 5000); // 5 segundos
+      }
+    });
 
     // Forzar re-evaluación de canSubmit cuando cambie el form
     this.form.valueChanges
@@ -275,12 +295,12 @@ export class PosVentaComponent {
       next: (rows: any) => {
         const data = Array.isArray(rows) ? rows : (rows?.data ?? []);
         const mapped = (data ?? [])
-          .map((c: any) => ({ 
-            id: Number(c.id), 
-            descripcion: String(c.descripcion ?? c.nombre ?? '') 
+          .map((c: any) => ({
+            id: Number(c.id),
+            descripcion: String(c.descripcion ?? c.nombre ?? '')
           }))
           .filter((c: any) => !!c.id && !!c.descripcion);
-        
+
         mapped.sort((a: any, b: any) => a.descripcion.localeCompare(b.descripcion, 'es'));
         this.categorias.set(mapped);
       },
@@ -313,8 +333,10 @@ export class PosVentaComponent {
     const search = (this.articuloSearch() ?? '').trim();
     const cat = this.categoriaId();
 
-    const categoria_id =
-      cat === 'all' ? null : (Number.isFinite(Number(cat)) ? Number(cat) : null);
+    // Si hay búsqueda por texto, ignorar filtro de categoría
+    const categoria_id = search
+      ? null
+      : (cat === 'all' ? null : (Number.isFinite(Number(cat)) ? Number(cat) : null));
 
     if (!append) this.gridLoading.set(true);
     else this.gridLoadingMore.set(true);
@@ -383,7 +405,7 @@ export class PosVentaComponent {
     this.banner.set(null);
     this.selectedArticulo.set(a);
     this.showLotesModal.set(true);
-    
+
     // Cargar lotes inmediatamente sin esperar
     this.loadLotes(a.id);
   }
@@ -551,7 +573,7 @@ export class PosVentaComponent {
     if (!line) return;
 
     const s = String(raw ?? '');
-    
+
     // Guardamos el draft
     this.cantidadDraft.set(key, s);
 
@@ -590,7 +612,7 @@ export class PosVentaComponent {
     }
 
     const safe = Math.max(0, n);
-    
+
     // Solo actualizar si cambió
     if (line.cantidad !== safe) {
       this.cart.set(
@@ -703,19 +725,19 @@ export class PosVentaComponent {
   }
 
   // TrackBy para evitar re-render completo del ngFor
-  trackByKey(index: number, item: CartLine): string {
+  trackByKey(_index: number, item: CartLine): string {
     return item.key;
   }
 
-  trackByArticuloId(index: number, item: any): number {
+  trackByArticuloId(_index: number, item: any): number {
     return item.id;
   }
 
-  trackByLoteId(index: number, item: LoteDisponible): number {
+  trackByLoteId(_index: number, item: LoteDisponible): number {
     return item.id;
   }
 
-  trackByCategoriaId(index: number, item: any): number {
+  trackByCategoriaId(_index: number, item: any): number {
     return item.id;
   }
 
@@ -793,6 +815,31 @@ export class PosVentaComponent {
   }
 
   // ====== Helpers ======
+  currentTime(): string {
+    const d = new Date();
+    return d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  nuevaVenta() {
+    window.open(window.location.href, '_blank');
+  }
+
+  confirmExit(event: Event) {
+    if (this.cart().length > 0) {
+      const confirmed = confirm('Tienes items en el carrito. ¿Seguro que quieres salir? Se perderá la venta actual.');
+      if (!confirmed) {
+        event.preventDefault();
+      }
+    }
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  unloadNotification($event: any): void {
+    if (this.cart().length > 0) {
+      $event.returnValue = 'Tienes items en el carrito. ¿Seguro que quieres salir? Se perderá la venta actual.';
+    }
+  }
+
   money(n: number): string {
     return n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
