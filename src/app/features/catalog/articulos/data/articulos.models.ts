@@ -14,6 +14,7 @@ export interface Articulo {
   activo: boolean;
   inventarios_sum_existencia?: number;
   imagen?: string | null;
+  imagen_url?: string | null;
 }
 
 export interface Paginated<T> {

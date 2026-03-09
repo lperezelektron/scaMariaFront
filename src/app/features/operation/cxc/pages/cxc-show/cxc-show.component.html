@@ -1,0 +1,163 @@
+<div class="show-page">
+
+  <!-- Toolbar -->
+  <div class="show-toolbar">
+    <button type="button" class="btn btn-outline-secondary" (click)="volver()">
+      ← Regresar
+    </button>
+
+    <button type="button" class="btn btn-primary"
+            *ngIf="cxc() && cxc()!.saldo > 0"
+            (click)="openModal()">
+      Registrar abono
+    </button>
+  </div>
+
+  <!-- Banner -->
+  <div *ngIf="banner() as b" class="alert"
+       [class.alert-success]="b.type === 'success'"
+       [class.alert-danger]="b.type === 'danger'">
+    {{ b.text }}
+  </div>
+
+  <!-- Cargando -->
+  <div *ngIf="loading()" class="text-center py-5">
+    <c-spinner></c-spinner>
+  </div>
+
+  <!-- Contenido -->
+  <ng-container *ngIf="!loading() && cxc() as c">
+
+    <!-- Encabezado -->
+    <div class="cxc-card">
+      <div class="cxc-card-header">
+        <div>
+          <h3 class="mb-1">Cuenta #{{ c.id }}</h3>
+          <span class="text-medium-emphasis small">
+            Venta #{{ c.venta_id || '—' }}
+          </span>
+        </div>
+        <c-badge [color]="estadoBadge()" class="badge-lg">
+          {{ estadoLabel() }}
+        </c-badge>
+      </div>
+
+      <hr />
+
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-label">Cliente</span>
+          <span>{{ c.cliente?.nombre || ('ID ' + c.cliente_id) }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Fecha</span>
+          <span>{{ c.fecha }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Vencimiento</span>
+          <span [class.text-danger]="esVencida()" [class.fw-semibold]="esVencida()">
+            {{ c.vencimiento }}
+          </span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Importe original</span>
+          <span>{{ c.importe | number:'1.2-2' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Saldo pendiente</span>
+          <span class="saldo-valor" [class.text-success]="c.saldo <= 0" [class.text-danger]="esVencida()">
+            {{ c.saldo | number:'1.2-2' }}
+          </span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Pagado</span>
+          <span class="text-success fw-semibold">
+            {{ (c.importe - c.saldo) | number:'1.2-2' }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Historial de abonos -->
+    <div class="cxc-card" *ngIf="c.detalles && c.detalles.length > 0">
+      <h5 class="mb-3">Historial de abonos</h5>
+
+      <div class="table-responsive">
+        <table cTable class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Fecha</th>
+              <th>Forma de pago</th>
+              <th class="text-end">Importe</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let d of c.detalles; let i = index">
+              <td>{{ i + 1 }}</td>
+              <td>{{ d.fecha }}</td>
+              <td>{{ d.forma_pago?.descripcion || ('FP #' + d.f_pago_id) }}</td>
+              <td class="text-end fw-semibold text-success">
+                {{ d.importe | number:'1.2-2' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="cxc-card text-medium-emphasis text-center py-3"
+         *ngIf="!c.detalles || c.detalles.length === 0">
+      Sin abonos registrados.
+    </div>
+
+  </ng-container>
+
+</div>
+
+<!-- Modal de abono -->
+<c-modal [visible]="modalVisible()" (visibleChange)="modalVisible.set($event)">
+  <c-modal-header>
+    <h5 class="modal-title">Registrar abono</h5>
+  </c-modal-header>
+
+  <c-modal-body>
+    <form [formGroup]="abonoForm" class="d-flex flex-column gap-3">
+
+      <div>
+        <label class="form-label">Importe <small class="text-medium-emphasis">(máx. {{ cxc()?.saldo | number:'1.2-2' }})</small></label>
+        <input type="number" class="form-control" formControlName="importe"
+               min="0.01" [attr.max]="cxc()?.saldo" step="0.01" placeholder="0.00" />
+        <div class="form-text text-danger"
+             *ngIf="abonoForm.controls.importe.invalid && abonoForm.controls.importe.touched">
+          Importe requerido y debe ser mayor a 0 y menor o igual al saldo.
+        </div>
+      </div>
+
+      <div>
+        <label class="form-label">Forma de pago</label>
+        <select class="form-select" formControlName="f_pago_id">
+          <option [ngValue]="null">Selecciona...</option>
+          <option *ngFor="let fp of formasPagoList()" [ngValue]="fp.id">
+            {{ fp.descripcion }}
+          </option>
+        </select>
+        <div class="form-text text-danger"
+             *ngIf="abonoForm.controls.f_pago_id.invalid && abonoForm.controls.f_pago_id.touched">
+          Selecciona una forma de pago.
+        </div>
+      </div>
+
+    </form>
+  </c-modal-body>
+
+  <c-modal-footer>
+    <button cButton color="secondary" variant="outline" (click)="closeModal()" [disabled]="saving()">
+      Cancelar
+    </button>
+    <button cButton color="primary" (click)="confirmarAbono()"
+            [disabled]="abonoForm.invalid || saving()">
+      {{ saving() ? 'Guardando...' : 'Confirmar abono' }}
+    </button>
+  </c-modal-footer>
+</c-modal>

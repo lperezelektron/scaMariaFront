@@ -60,11 +60,12 @@
             <div *ngIf="gridLoading()" class="muted big">Cargando catálogo...</div>
 
             <div class="art-grid" *ngIf="!gridLoading()">
-              <button type="button" class="art-tile" *ngFor="let a of gridItems(); trackBy: trackByArticuloId" (click)="selectArticulo(a)">
+              <button type="button" class="art-tile" *ngFor="let a of gridItems(); trackBy: trackByArticuloId"
+                (click)="selectArticulo(a)">
                 <div class="img">
                   <img [src]="imgSrc(a)" [alt]="a.nombre" loading="lazy" decoding="async" />
                 </div>
-                <div class="info">
+                <div class="info" *ngIf="!a.imagen_url">
                   <div class="name">{{ a.nombre }}</div>
                   <div class="meta text-muted">
                     {{ a.categoria?.descripcion || ('Cat #' + a.categoria_id) }}
@@ -141,7 +142,8 @@
                   </div>
 
                   <div class="control-group price-group">
-                    <label class="control-label">Precio unitario <span class="price-hint">· Mín: {{ money(+x.lote.precio_min || 0) }}</span></label>
+                    <label class="control-label">Precio unitario <span class="price-hint">· Mín: {{
+                        money(+x.lote.precio_min || 0) }}</span></label>
                     <input class="price-input" type="text" inputmode="decimal" autocomplete="off" spellcheck="false"
                       [value]="precioView(x.key, x.precio)" (input)="setPrecio(x.key, $any($event.target).value)"
                       (blur)="commitPrecio(x.key)" />
@@ -314,7 +316,8 @@
       <div *ngIf="loadingLotes()" class="muted">Cargando lotes...</div>
 
       <div class="lotes-list" *ngIf="!loadingLotes()">
-        <button type="button" class="lote-item" *ngFor="let l of lotes(); trackBy: trackByLoteId" (click)="selectLote(l)">
+        <button type="button" class="lote-item" *ngFor="let l of lotes(); trackBy: trackByLoteId"
+          (click)="selectLote(l)">
           <div class="lote-main">
             <div class="lote-info">
               <div class="lote-variedad">{{ l.variedad || 'Sin variedad' }}</div>
@@ -342,14 +345,14 @@
 
   <!-- Modal de Confirmación Personalizado -->
   <div class="confirm-backdrop" *ngIf="confirmOpen()" (click)="cancelConfirm()"></div>
-  
+
   <div class="confirm-modal" *ngIf="confirmOpen()">
     <div class="confirm-header">
       <div class="confirm-icon">
         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="12" y1="8" x2="12" y2="12"/>
-          <line x1="12" y1="16" x2="12.01" y2="16"/>
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="8" x2="12" y2="12" />
+          <line x1="12" y1="16" x2="12.01" y2="16" />
         </svg>
       </div>
       <div class="confirm-title">{{ confirmTitle() }}</div>

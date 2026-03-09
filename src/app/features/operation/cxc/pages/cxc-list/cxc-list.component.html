@@ -1,0 +1,148 @@
+<div class="crud-page">
+
+  <!-- Encabezado -->
+  <div class="crud-header">
+    <div class="crud-title">
+      <h2>Cuentas por Cobrar</h2>
+      <small>{{ total() }} cuenta{{ total() !== 1 ? 's' : '' }}</small>
+    </div>
+    <div class="crud-actions">
+      <button type="button" class="btn btn-outline-secondary" (click)="reload()">
+        Refrescar
+      </button>
+    </div>
+  </div>
+
+  <!-- Tarjetas de resumen -->
+  <div class="cxc-resumen" *ngIf="resumen() as r">
+    <div class="resumen-card">
+      <span class="resumen-label">Total pendiente</span>
+      <span class="resumen-valor text-warning">{{ r.total_pendiente | number:'1.2-2' }}</span>
+      <span class="resumen-sub">{{ r.num_cuentas }} cuenta{{ r.num_cuentas !== 1 ? 's' : '' }}</span>
+    </div>
+    <div class="resumen-card danger">
+      <span class="resumen-label">Total vencido</span>
+      <span class="resumen-valor text-danger">{{ r.total_vencido | number:'1.2-2' }}</span>
+      <span class="resumen-sub">{{ r.num_vencidas }} cuenta{{ r.num_vencidas !== 1 ? 's' : '' }}</span>
+    </div>
+    <div class="resumen-card">
+      <span class="resumen-label">Por vencer (7 días)</span>
+      <span class="resumen-valor text-info">{{ r.por_vencer_7dias | number:'1.2-2' }}</span>
+    </div>
+  </div>
+
+  <!-- Banner -->
+  <div *ngIf="banner() as b" class="alert"
+       [class.alert-danger]="b.type === 'danger'"
+       [class.alert-success]="b.type === 'success'"
+       [class.alert-info]="b.type === 'info'">
+    {{ b.text }}
+  </div>
+
+  <!-- Filtros -->
+  <form [formGroup]="filtros" class="crud-toolbar">
+
+    <div class="filter-group">
+      <label class="form-label mb-1">Cliente</label>
+      <select class="form-select" formControlName="cliente_id">
+        <option [ngValue]="null">Todos los clientes</option>
+        <option *ngFor="let c of clientes()" [ngValue]="c.id">{{ c.nombre }}</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label class="form-label mb-1">Estado</label>
+      <select class="form-select" formControlName="estado">
+        <option value="pendientes">Pendientes</option>
+        <option value="vencidas">Vencidas</option>
+        <option value="todas">Todas</option>
+      </select>
+    </div>
+
+    <div class="filter-actions">
+      <button type="button" class="btn btn-outline-secondary" (click)="clearFilters()">
+        Limpiar
+      </button>
+    </div>
+
+    <div class="crud-pagination" *ngIf="hasPaging()">
+      <button type="button" class="btn btn-outline-secondary btn-sm"
+              (click)="prev()" [disabled]="page() <= 1">Anterior</button>
+      <span class="crud-pageinfo">Pág. {{ page() }} / {{ lastPage() }}</span>
+      <button type="button" class="btn btn-outline-secondary btn-sm"
+              (click)="next()" [disabled]="page() >= lastPage()">Siguiente</button>
+    </div>
+
+  </form>
+
+  <!-- Tabla -->
+  <div class="crud-grid">
+    <div class="table-responsive">
+      <table cTable class="table align-middle">
+        <thead>
+          <tr>
+            <th style="width:80px;">#</th>
+            <th>Cliente</th>
+            <th style="width:120px;">Fecha</th>
+            <th style="width:130px;">Vencimiento</th>
+            <th style="width:80px;">Días</th>
+            <th class="text-end" style="width:120px;">Importe</th>
+            <th class="text-end" style="width:120px;">Saldo</th>
+            <th style="width:110px;">Estado</th>
+            <th style="width:70px;"></th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <tr *ngIf="loading()">
+            <td colspan="9" class="text-center py-4">
+              <c-spinner size="sm"></c-spinner> Cargando...
+            </td>
+          </tr>
+
+          <tr *ngFor="let c of items()" [class.row-vencida]="esVencida(c)">
+            <td class="fw-semibold">#{{ c.id }}</td>
+            <td>{{ c.cliente?.nombre || ('Cliente #' + c.cliente_id) }}</td>
+            <td>{{ c.fecha }}</td>
+            <td>{{ c.vencimiento }}</td>
+            <td>
+              <span [class.text-danger]="esVencida(c)" [class.fw-semibold]="esVencida(c)">
+                {{ diasRestantes(c) }}
+              </span>
+            </td>
+            <td class="text-end">{{ c.importe | number:'1.2-2' }}</td>
+            <td class="text-end fw-semibold">{{ c.saldo | number:'1.2-2' }}</td>
+            <td>
+              <c-badge [color]="estadoBadge(c)">{{ estadoLabel(c) }}</c-badge>
+            </td>
+            <td>
+              <button class="btn btn-light btn-sm" type="button" (click)="ver(c)">
+                Ver
+              </button>
+            </td>
+          </tr>
+
+          <tr *ngIf="!loading() && items().length === 0">
+            <td colspan="9" class="text-center py-4 text-medium-emphasis">
+              No hay cuentas por cobrar para mostrar.
+            </td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+
+    <div class="d-flex align-items-center justify-content-between mt-2" *ngIf="hasPaging()">
+      <span class="text-medium-emphasis small">
+        Página {{ page() }} de {{ lastPage() }} — Total: {{ total() }}
+      </span>
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-secondary btn-sm"
+                (click)="prev()" [disabled]="page() <= 1">Anterior</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm"
+                (click)="next()" [disabled]="page() >= lastPage()">Siguiente</button>
+      </div>
+    </div>
+  </div>
+
+</div>

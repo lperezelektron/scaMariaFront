@@ -115,7 +115,7 @@ export class PosVentaComponent {
     }
     return sum;
   });
-  
+
   impuestos = computed(() => {
     const cart = this.cart();
     let sum = 0;
@@ -124,7 +124,7 @@ export class PosVentaComponent {
     }
     return sum;
   });
-  
+
   total = computed(() => this.subtotal() + this.impuestos());
 
   linesCount = computed(() => this.cart().length);
@@ -154,13 +154,13 @@ export class PosVentaComponent {
   canSubmit = computed(() => {
     // Incluir formTouched para forzar re-evaluación
     this.formTouched();
-    
+
     // Early returns para evitar cálculos innecesarios
     if (this.saving()) return false;
-    
+
     const cartLength = this.cart().length;
     if (cartLength === 0) return false;
-    
+
     if (this.form.invalid) return false;
 
     const credito = this.form.value.credito;
@@ -174,7 +174,7 @@ export class PosVentaComponent {
       const cantidad = line.cantidad;
       const existencia = +line.lote.existencia || 0;
       const precioMin = +line.lote.precio_min || 0;
-      
+
       if (cantidad <= 0 || cantidad > existencia || line.precio < precioMin) {
         return false;
       }
@@ -275,12 +275,12 @@ export class PosVentaComponent {
       next: (rows: any) => {
         const data = Array.isArray(rows) ? rows : (rows?.data ?? []);
         const mapped = (data ?? [])
-          .map((c: any) => ({ 
-            id: Number(c.id), 
-            descripcion: String(c.descripcion ?? c.nombre ?? '') 
+          .map((c: any) => ({
+            id: Number(c.id),
+            descripcion: String(c.descripcion ?? c.nombre ?? '')
           }))
           .filter((c: any) => !!c.id && !!c.descripcion);
-        
+
         mapped.sort((a: any, b: any) => a.descripcion.localeCompare(b.descripcion, 'es'));
         this.categorias.set(mapped);
       },
@@ -370,7 +370,8 @@ export class PosVentaComponent {
   }
 
   imgSrc(a: any): string {
-    return a?.imagen || '../../../../../../assets/images/picture.png';
+    console.log(a.imagen_url);
+    return `http://${a.imagen_url}`
   }
 
   selectArticulo(a: any) {
@@ -383,7 +384,7 @@ export class PosVentaComponent {
     this.banner.set(null);
     this.selectedArticulo.set(a);
     this.showLotesModal.set(true);
-    
+
     // Cargar lotes inmediatamente sin esperar
     this.loadLotes(a.id);
   }
@@ -551,7 +552,7 @@ export class PosVentaComponent {
     if (!line) return;
 
     const s = String(raw ?? '');
-    
+
     // Guardamos el draft
     this.cantidadDraft.set(key, s);
 
@@ -590,7 +591,7 @@ export class PosVentaComponent {
     }
 
     const safe = Math.max(0, n);
-    
+
     // Solo actualizar si cambió
     if (line.cantidad !== safe) {
       this.cart.set(
