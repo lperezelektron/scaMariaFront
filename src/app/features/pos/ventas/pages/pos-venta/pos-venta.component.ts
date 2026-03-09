@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, computed, inject, signal, ChangeDetectionStrategy, HostListener, effect } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { debounceTime, distinctUntilChanged, Subject, interval } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
@@ -40,6 +40,7 @@ type CartLine = {
 export class PosVentaComponent {
   private fb = inject(FormBuilder);
   private destroyRef = inject(DestroyRef);
+  private router = inject(Router);
 
   private ventasSvc = inject(VentasService);
   private articulosSvc = inject(ArticulosService);
@@ -190,6 +191,7 @@ export class PosVentaComponent {
   confirmAcceptText = signal('Eliminar');
 
   private pendingConfirmAction: (() => void) | null = null;
+  private allowNavigation = false;
 
   constructor() {
     this.loadCatalogos();
@@ -826,12 +828,26 @@ export class PosVentaComponent {
   }
 
   confirmExit(event: Event) {
-    if (this.cart().length > 0) {
-      const confirmed = confirm('Tienes items en el carrito. ¿Seguro que quieres salir? Se perderá la venta actual.');
-      if (!confirmed) {
-        event.preventDefault();
-      }
+    if (this.cart().length === 0) {
+      // Si no hay items, permitir salir directamente
+      return;
     }
+
+    // Prevenir la navegación
+    event.preventDefault();
+
+    // Mostrar modal de confirmación personalizado
+    this.openConfirm({
+      title: 'Salir del POS',
+      message: 'Tienes items en el carrito. ¿Seguro que quieres salir?',
+      sub: 'Se perderá la venta actual y no podrás recuperarla.',
+      acceptText: 'Salir',
+      onAccept: () => {
+        // Permitir navegación y ejecutar
+        this.allowNavigation = true;
+        this.router.navigate(['/dashboard']);
+      },
+    });
   }
 
   @HostListener('window:beforeunload', ['$event'])
