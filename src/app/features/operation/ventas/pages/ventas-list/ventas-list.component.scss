@@ -1,0 +1,43 @@
+.crud-page { display: flex; flex-direction: column; gap: 1.25rem; }
+
+.crud-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; }
+
+.crud-title h2 { margin: 0; font-weight: 600; }
+.crud-title small { color: var(--cui-body-color); opacity: .7; }
+
+.crud-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
+
+.crud-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: .75rem;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.filter-group .form-select  { min-width: 220px; width: auto; }
+.filter-group .form-control  { min-width: 160px; width: auto; }
+
+.filter-actions { align-self: flex-end; }
+
+.crud-pagination { margin-left: auto; display: flex; align-items: center; gap: .5rem; }
+.crud-pageinfo   { font-size: .875rem; opacity: .75; white-space: nowrap; }
+
+.crud-grid {
+  background: var(--cui-card-bg, #fff);
+  border-radius: .5rem;
+  padding: .75rem;
+  box-shadow: 0 .125rem .25rem rgba(0,0,0,.04);
+}
+
+@media (max-width: 768px) {
+  .crud-header    { flex-direction: column; align-items: stretch; }
+  .crud-toolbar   { flex-direction: column; align-items: stretch; }
+  .crud-pagination { margin-left: 0; }
+  .filter-group .form-select,
+  .filter-group .form-control { min-width: 0; width: 100%; }
+}

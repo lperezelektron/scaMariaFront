@@ -1,0 +1,106 @@
+<div class="show-page">
+
+  <!-- Toolbar (oculto al imprimir) -->
+  <div class="show-toolbar no-print">
+    <button type="button" class="btn btn-outline-secondary" (click)="volver()">
+      ← Regresar
+    </button>
+
+    <button type="button" class="btn btn-outline-primary" (click)="imprimir()"
+            [disabled]="loading() || !venta()">
+      Imprimir
+    </button>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="banner() as b" class="alert alert-danger no-print">
+    {{ b.text }}
+  </div>
+
+  <!-- Cargando -->
+  <div *ngIf="loading()" class="text-center py-5 no-print">
+    <c-spinner></c-spinner>
+  </div>
+
+  <!-- Contenido imprimible -->
+  <div *ngIf="!loading() && venta() as v" class="ticket">
+
+    <div class="ticket-header">
+      <h3 class="ticket-title">Venta #{{ v.id }}</h3>
+      <p class="ticket-sub">Fecha: {{ v.fecha }}</p>
+    </div>
+
+    <hr />
+
+    <div class="ticket-info">
+      <div class="info-row">
+        <span class="info-label">Cliente:</span>
+        <span>{{ v.cliente?.nombre || ('ID ' + v.cliente_id) }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Almacén:</span>
+        <span>{{ v.almacen?.descripcion || ('-') }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Forma de pago:</span>
+        <span>{{ v.forma_pago?.descripcion || ('-') }}</span>
+      </div>
+      <div class="info-row" *ngIf="v.credito">
+        <span class="info-label">Días de crédito:</span>
+        <span>{{ v.dias_credito ?? '-' }}</span>
+      </div>
+      <div class="info-row" *ngIf="v.user">
+        <span class="info-label">Atendió:</span>
+        <span>{{ v.user!.name }}</span>
+      </div>
+    </div>
+
+    <hr />
+
+    <!-- Detalle de artículos -->
+    <table class="ticket-table" *ngIf="v.detalles?.length">
+      <thead>
+        <tr>
+          <th class="text-start">Artículo</th>
+          <th class="text-end">Cant.</th>
+          <th class="text-end">Precio</th>
+          <th class="text-end">Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let d of v.detalles">
+          <td>{{ d.articulo?.nombre || ('Art. #' + d.articulo_id) }}</td>
+          <td class="text-end">{{ d.cantidad | number:'1.0-3' }}</td>
+          <td class="text-end">{{ d.precio | number:'1.2-2' }}</td>
+          <td class="text-end">{{ subtotalDetalle(d.cantidad, d.precio) | number:'1.2-2' }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p *ngIf="!v.detalles?.length" class="text-medium-emphasis">Sin detalle de artículos.</p>
+
+    <hr />
+
+    <!-- Totales -->
+    <div class="ticket-totals">
+      <div class="total-row">
+        <span>Subtotal:</span>
+        <span>{{ v.subtotal | number:'1.2-2' }}</span>
+      </div>
+      <div class="total-row" *ngIf="v.impuestos">
+        <span>Impuestos:</span>
+        <span>{{ v.impuestos | number:'1.2-2' }}</span>
+      </div>
+      <div class="total-row total-final">
+        <span>Total:</span>
+        <span>{{ v.total | number:'1.2-2' }}</span>
+      </div>
+    </div>
+
+    <hr />
+
+    <p class="ticket-footer">Gracias por su compra.</p>
+
+  </div>
+
+</div>

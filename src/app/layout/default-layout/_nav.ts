@@ -27,6 +27,18 @@ export const navItems: INavDataPerm[] = [
     permissions: ['caja.ver', 'caja.movimiento', 'caja.corte'],
   },
   {
+    name: 'Ventas',
+    url: '/operation/ventas',
+    icon: 'nav-icon-bullet',
+    permissions: ['ventas.ver'],
+  },
+  {
+    name: 'CxC',
+    url: '/operation/cxc',
+    icon: 'nav-icon-bullet',
+    permissions: ['ventas.ver'],
+  },
+  {
     name: 'Compras',
     url: '/operation/compras',
     icon: 'nav-icon-bullet',
