@@ -4,6 +4,7 @@ import { PosLayoutComponent } from './layout/pos-layout/pos-layout.component';
 import { AuthGuard } from './core/auth/auth.guard';
 import { GuestGuard } from './core/auth/guest.guard';
 import { permissionMatch } from './core/auth/permission.match';
+import { PosVentaComponent } from './features/pos/ventas/pages/pos-venta/pos-venta.component';
 
 export const routes: Routes = [
   // Login (fuera del layout)
@@ -78,7 +79,7 @@ export const routes: Routes = [
   },
   {
     path: 'pos',
-    component: PosLayoutComponent,
+    component: PosVentaComponent,
     canActivate: [AuthGuard],
     canMatch: [permissionMatch(['ventas.ver', 'ventas.crear'])],
     loadChildren: () =>

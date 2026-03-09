@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal, ChangeDetectionStrategy, HostListener, effect } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
+import { Router, RouterLink } from '@angular/router';
+import { debounceTime, distinctUntilChanged, Subject, interval } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { ArticulosService } from '../../../../catalog/articulos/data/articulos.service';
@@ -31,7 +32,7 @@ type CartLine = {
 @Component({
   selector: 'app-pos-venta',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './pos-venta.component.html',
   styleUrl: './pos-venta.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -39,6 +40,7 @@ type CartLine = {
 export class PosVentaComponent {
   private fb = inject(FormBuilder);
   private destroyRef = inject(DestroyRef);
+  private router = inject(Router);
 
   private ventasSvc = inject(VentasService);
   private articulosSvc = inject(ArticulosService);
@@ -167,15 +169,14 @@ export class PosVentaComponent {
     const diasCredito = this.form.value.dias_credito;
     if (credito && (!diasCredito || diasCredito <= 0)) return false;
 
-    // Validación de líneas del carrito (optimizada)
+    // Validación de líneas del carrito (solo stock, precio no editable)
     const cart = this.cart();
     for (let i = 0; i < cartLength; i++) {
       const line = cart[i];
       const cantidad = line.cantidad;
       const existencia = +line.lote.existencia || 0;
-      const precioMin = +line.lote.precio_min || 0;
 
-      if (cantidad <= 0 || cantidad > existencia || line.precio < precioMin) {
+      if (cantidad <= 0 || cantidad > existencia) {
         return false;
       }
     }
@@ -190,9 +191,30 @@ export class PosVentaComponent {
   confirmAcceptText = signal('Eliminar');
 
   private pendingConfirmAction: (() => void) | null = null;
+  private allowNavigation = false;
 
   constructor() {
     this.loadCatalogos();
+
+    // Timer para reloj
+    interval(1000)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        // Forzar actualización del reloj cada segundo
+        this.formTouched.update(v => v);
+      });
+
+    // Timer para auto-ocultar banner (usando effect)
+    effect(() => {
+      const b = this.banner();
+      if (b) {
+        setTimeout(() => {
+          if (this.banner() === b) {
+            this.banner.set(null);
+          }
+        }, 5000); // 5 segundos
+      }
+    });
 
     // Forzar re-evaluación de canSubmit cuando cambie el form
     this.form.valueChanges
@@ -313,8 +335,10 @@ export class PosVentaComponent {
     const search = (this.articuloSearch() ?? '').trim();
     const cat = this.categoriaId();
 
-    const categoria_id =
-      cat === 'all' ? null : (Number.isFinite(Number(cat)) ? Number(cat) : null);
+    // Si hay búsqueda por texto, ignorar filtro de categoría
+    const categoria_id = search
+      ? null
+      : (cat === 'all' ? null : (Number.isFinite(Number(cat)) ? Number(cat) : null));
 
     if (!append) this.gridLoading.set(true);
     else this.gridLoadingMore.set(true);
@@ -704,19 +728,19 @@ export class PosVentaComponent {
   }
 
   // TrackBy para evitar re-render completo del ngFor
-  trackByKey(index: number, item: CartLine): string {
+  trackByKey(_index: number, item: CartLine): string {
     return item.key;
   }
 
-  trackByArticuloId(index: number, item: any): number {
+  trackByArticuloId(_index: number, item: any): number {
     return item.id;
   }
 
-  trackByLoteId(index: number, item: LoteDisponible): number {
+  trackByLoteId(_index: number, item: LoteDisponible): number {
     return item.id;
   }
 
-  trackByCategoriaId(index: number, item: any): number {
+  trackByCategoriaId(_index: number, item: any): number {
     return item.id;
   }
 
@@ -794,6 +818,45 @@ export class PosVentaComponent {
   }
 
   // ====== Helpers ======
+  currentTime(): string {
+    const d = new Date();
+    return d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  nuevaVenta() {
+    window.open(window.location.href, '_blank');
+  }
+
+  confirmExit(event: Event) {
+    if (this.cart().length === 0) {
+      // Si no hay items, permitir salir directamente
+      return;
+    }
+
+    // Prevenir la navegación
+    event.preventDefault();
+
+    // Mostrar modal de confirmación personalizado
+    this.openConfirm({
+      title: 'Salir del POS',
+      message: 'Tienes items en el carrito. ¿Seguro que quieres salir?',
+      sub: 'Se perderá la venta actual y no podrás recuperarla.',
+      acceptText: 'Salir',
+      onAccept: () => {
+        // Permitir navegación y ejecutar
+        this.allowNavigation = true;
+        this.router.navigate(['/dashboard']);
+      },
+    });
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  unloadNotification($event: any): void {
+    if (this.cart().length > 0) {
+      $event.returnValue = 'Tienes items en el carrito. ¿Seguro que quieres salir? Se perderá la venta actual.';
+    }
+  }
+
   money(n: number): string {
     return n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }

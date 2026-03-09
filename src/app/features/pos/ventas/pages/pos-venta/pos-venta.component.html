@@ -1,22 +1,37 @@
 <div class="pos-sale" [class.sidebar-open]="showCheckout()">
 
+  <!-- Header POS integrado -->
+  <header class="pos-header">
+    <div class="pos-left">
+      <div class="pos-logo">Limonero POS</div>
+      <div class="pos-time">{{ currentTime() }}</div>
+    </div>
+
+    <div class="pos-center">
+      <div class="almacen-selector" [formGroup]="form">
+        <label class="almacen-label">Almacén:</label>
+        <select class="form-select form-select-sm" formControlName="almacen_id">
+          <option [ngValue]="null">Selecciona almacén...</option>
+          <option *ngFor="let a of almacenes()" [ngValue]="a.id">{{ a.descripcion }}</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="pos-right">
+      <button type="button" class="action-btn" (click)="nuevaVenta()" title="Nueva venta">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        Nueva Venta
+      </button>
+      <button type="button" class="exit-btn" (click)="confirmExit($event)">Salir</button>
+    </div>
+  </header>
+
   <div *ngIf="banner() as b" class="alert mb-2" [class.alert-success]="b.type === 'success'"
     [class.alert-danger]="b.type === 'danger'" [class.alert-info]="b.type === 'info'">
     {{ b.text }}
-  </div>
-
-  <!-- Selector de Almacén (fuera del grid principal) -->
-  <div class="top-controls" [formGroup]="form">
-    <div class="control-group">
-      <label class="control-label">Almacén</label>
-      <select class="form-select" formControlName="almacen_id">
-        <option [ngValue]="null">Selecciona almacén...</option>
-        <option *ngFor="let a of almacenes()" [ngValue]="a.id">{{ a.descripcion }}</option>
-      </select>
-      <div class="text-danger small mt-1" *ngIf="backendError('almacen_id')">
-        {{ backendError('almacen_id') }}
-      </div>
-    </div>
   </div>
 
   <section class="grid">
@@ -27,16 +42,8 @@
       <!-- LEFT: catálogo -->
       <aside class="panel panel-catalog">
         <div class="panel-header">
-          <div class="panel-title">Productos</div>
-
           <!-- Filtros rápidos -->
           <div class="catalog-toolbar">
-            <div class="search-row">
-              <input class="form-control form-control-sm" [value]="articuloSearch()"
-                (input)="onGridSearch($any($event.target).value)" placeholder="Buscar por nombre..." autocomplete="off"
-                spellcheck="false" />
-            </div>
-
             <div class="cats-row" *ngIf="categorias().length">
               <button type="button" class="cat-chip" [class.active]="categoriaId()==='all'"
                 (click)="setCategoria('all')">
@@ -49,8 +56,10 @@
               </button>
             </div>
 
-            <div class="cats-row" *ngIf="!categorias().length">
-              <div class="muted-soft">Categorías no disponibles (por ahora).</div>
+            <div class="search-row">
+              <input class="form-control form-control-sm" [value]="articuloSearch()"
+                (input)="onGridSearch($any($event.target).value)" placeholder="Buscar por nombre..." autocomplete="off"
+                spellcheck="false" />
             </div>
           </div>
         </div>
@@ -107,15 +116,9 @@
                 <!-- Header del item -->
                 <div class="item-header">
                   <div class="item-info">
-                    <div class="item-name">{{ x.lote.articulo?.nombre || ('Artículo #' + x.articulo_id) }}</div>
-                    <div class="item-badges">
-                      <span class="badge badge-lote">Lote #{{ x.lote_id }}</span>
-                      <span class="badge badge-variedad" *ngIf="x.lote.variedad">{{ x.lote.variedad }}</span>
-                      <span class="badge badge-stock">Stock: {{ x.lote.existencia }} {{ x.lote.articulo?.unidad
-                        }}</span>
-                      <span class="badge badge-empaque" *ngIf="x.lote.empaque && +x.lote.empaque > 0">
-                        Empaque: {{ x.lote.empaque }}
-                      </span>
+                    <div class="item-name">
+                      <span *ngIf="x.lote.variedad" class="variedad-prefix">{{ x.lote.variedad }} -</span>
+                      {{ x.lote.articulo?.nombre || ('Artículo #' + x.articulo_id) }}
                     </div>
                   </div>
                   <button type="button" class="btn-remove" (click)="removeLine(x.key)" title="Quitar"
@@ -139,14 +142,12 @@
                       <button type="button" class="qty-btn" (click)="bumpQty(x.key, +1)"
                         aria-label="Aumentar cantidad">+</button>
                     </div>
+                    <div class="stock-info">Disponible: {{ x.lote.existencia }} {{ x.lote.articulo?.unidad }}</div>
                   </div>
 
                   <div class="control-group price-group">
-                    <label class="control-label">Precio unitario <span class="price-hint">· Mín: {{
-                        money(+x.lote.precio_min || 0) }}</span></label>
-                    <input class="price-input" type="text" inputmode="decimal" autocomplete="off" spellcheck="false"
-                      [value]="precioView(x.key, x.precio)" (input)="setPrecio(x.key, $any($event.target).value)"
-                      (blur)="commitPrecio(x.key)" />
+                    <label class="control-label">Precio unitario</label>
+                    <div class="price-display">{{ money(x.precio) }}</div>
                   </div>
 
                   <div class="control-group sub-group">
@@ -156,22 +157,14 @@
                 </div>
 
                 <!-- Alertas -->
-                <div class="item-alerts" *ngIf="isOverStock(x) || isBelowMinPrice(x)">
-                  <div class="alert-message" *ngIf="isOverStock(x)">
+                <div class="item-alerts" *ngIf="isOverStock(x)">
+                  <div class="alert-message">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <circle cx="12" cy="12" r="10" />
                       <line x1="12" y1="8" x2="12" y2="12" />
                       <line x1="12" y1="16" x2="12.01" y2="16" />
                     </svg>
                     Excede existencia disponible (máx {{ x.lote.existencia }})
-                  </div>
-                  <div class="alert-message" *ngIf="isBelowMinPrice(x)">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <circle cx="12" cy="12" r="10" />
-                      <line x1="12" y1="8" x2="12" y2="12" />
-                      <line x1="12" y1="16" x2="12.01" y2="16" />
-                    </svg>
-                    Precio por debajo del mínimo permitido
                   </div>
                 </div>
               </div>
