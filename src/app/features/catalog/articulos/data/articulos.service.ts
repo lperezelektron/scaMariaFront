@@ -34,12 +34,13 @@ export class ArticulosService {
     return this.http.get(`${this.base}/api/articulos/${id}`);
   }
 
-  create(payload: Partial<Articulo>): Observable<any> {
-    return this.http.post(`${this.base}/api/articulos`, payload);
+  create(formData: FormData): Observable<any> {
+    return this.http.post(`${this.base}/api/articulos`, formData);
   }
 
-  update(id: number, payload: Partial<Articulo>): Observable<any> {
-    return this.http.put(`${this.base}/api/articulos/${id}`, payload);
+  update(id: number, formData: FormData): Observable<any> {
+    formData.append('_method', 'PUT');
+    return this.http.post(`${this.base}/api/articulos/${id}`, formData);
   }
 
   delete(id: number): Observable<any> {

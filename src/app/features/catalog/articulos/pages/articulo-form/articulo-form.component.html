@@ -57,6 +57,18 @@
         </div>
       </div>
 
+      <div class="col-12 col-md-6">
+        <label class="form-label">Imagen</label>
+        <input type="file" class="form-control" accept="image/*" (change)="onImageChange($event)" />
+        <div *ngIf="imagenPreview() as preview" class="mt-2">
+          <img [src]="preview" alt="Vista previa" style="max-height: 120px; border-radius: 4px;" />
+        </div>
+        <div *ngIf="!imagenPreview() && imagenActual() as actual" class="mt-2">
+          <img [src]="actual" alt="Imagen actual" style="max-height: 120px; border-radius: 4px;" />
+        </div>
+        <div class="invalid-hint" *ngIf="backendError('imagen')">{{ backendError('imagen') }}</div>
+      </div>
+
       <div class="col-12">
         <hr class="my-2" />
         <div class="d-flex gap-2 justify-content-end">

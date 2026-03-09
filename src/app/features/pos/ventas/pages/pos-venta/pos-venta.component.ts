@@ -392,7 +392,8 @@ export class PosVentaComponent {
   }
 
   imgSrc(a: any): string {
-    return a?.imagen || '../../../../../../assets/images/picture.png';
+    console.log(a.imagen_url);
+    return `http://${a.imagen_url}`
   }
 
   selectArticulo(a: any) {

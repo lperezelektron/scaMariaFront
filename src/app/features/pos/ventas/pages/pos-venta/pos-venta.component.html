@@ -74,7 +74,7 @@
                 <div class="img">
                   <img [src]="imgSrc(a)" [alt]="a.nombre" loading="lazy" decoding="async" />
                 </div>
-                <div class="info">
+                <div class="info" *ngIf="!a.imagen_url">
                   <div class="name">{{ a.nombre }}</div>
                   <div class="meta text-muted">
                     {{ a.categoria?.descripcion || ('Cat #' + a.categoria_id) }}

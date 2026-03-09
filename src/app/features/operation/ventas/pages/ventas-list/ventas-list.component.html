@@ -1,0 +1,146 @@
+<div class="crud-page">
+
+  <!-- Encabezado -->
+  <div class="crud-header">
+    <div class="crud-title">
+      <h2>Ventas</h2>
+      <small>{{ total() }} resultado{{ total() !== 1 ? 's' : '' }}</small>
+    </div>
+
+    <div class="crud-actions">
+      <button type="button" class="btn btn-outline-secondary" (click)="reload()">
+        Refrescar
+      </button>
+    </div>
+  </div>
+
+  <!-- Banner de alertas -->
+  <div *ngIf="banner() as b" class="alert"
+       [class.alert-success]="b.type === 'success'"
+       [class.alert-danger]="b.type === 'danger'"
+       [class.alert-info]="b.type === 'info'">
+    {{ b.text }}
+  </div>
+
+  <!-- Toolbar de filtros -->
+  <form [formGroup]="filtros" class="crud-toolbar">
+
+    <div class="filter-group">
+      <label class="form-label mb-1">Almacén</label>
+      <select class="form-select" formControlName="almacen_id">
+        <option [ngValue]="null">Todos los almacenes</option>
+        <option *ngFor="let a of almacenes()" [ngValue]="a.id">
+          {{ a.descripcion }}
+        </option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label class="form-label mb-1">Fecha</label>
+      <input class="form-control" type="date" formControlName="fecha" />
+    </div>
+
+    <div class="filter-actions">
+      <button type="button" class="btn btn-outline-secondary" (click)="clearFilters()">
+        Limpiar filtros
+      </button>
+    </div>
+
+    <div class="crud-pagination" *ngIf="hasPaging()">
+      <button type="button" class="btn btn-outline-secondary btn-sm"
+              (click)="prev()" [disabled]="page() <= 1">
+        Anterior
+      </button>
+      <span class="crud-pageinfo">Pág. {{ page() }} / {{ lastPage() }}</span>
+      <button type="button" class="btn btn-outline-secondary btn-sm"
+              (click)="next()" [disabled]="page() >= lastPage()">
+        Siguiente
+      </button>
+    </div>
+
+  </form>
+
+  <!-- Tabla de ventas -->
+  <div class="crud-grid">
+    <div class="table-responsive">
+      <table cTable class="table align-middle">
+        <thead>
+          <tr>
+            <th style="width:90px;">Folio</th>
+            <th style="width:130px;">Fecha</th>
+            <th>Cliente</th>
+            <th>Almacén</th>
+            <th style="width:140px;">Forma de pago</th>
+            <th class="text-end" style="width:120px;">Total</th>
+            <th style="width:110px;">Estatus</th>
+            <th style="width:100px;"></th>
+          </tr>
+        </thead>
+
+        <tbody>
+
+          <!-- Cargando -->
+          <tr *ngIf="loading()">
+            <td colspan="8" class="text-center py-4">
+              <c-spinner size="sm"></c-spinner> Cargando...
+            </td>
+          </tr>
+
+          <!-- Filas -->
+          <tr *ngFor="let v of items()">
+            <td class="fw-semibold">#{{ v.id }}</td>
+            <td>{{ v.fecha }}</td>
+            <td>{{ v.cliente?.nombre || ('Cliente #' + v.cliente_id) }}</td>
+            <td>{{ v.almacen?.descripcion || ('-') }}</td>
+            <td>{{ v.forma_pago?.descripcion || ('-') }}</td>
+            <td class="text-end">{{ v.total | number:'1.2-2' }}</td>
+            <td>
+              <c-badge [color]="estatusBadge(v.estatus)">
+                {{ estatusLabel(v.estatus) }}
+              </c-badge>
+            </td>
+            <td>
+              <div class="d-flex gap-1 justify-content-end">
+                <button class="btn btn-light btn-sm" type="button"
+                        title="Ver detalle" (click)="ver(v)">
+                  Ver
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" type="button"
+                        title="Imprimir" (click)="imprimir(v)">
+                  <span>&#128438;</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Sin resultados -->
+          <tr *ngIf="!loading() && items().length === 0">
+            <td colspan="8" class="text-center py-4 text-medium-emphasis">
+              No hay ventas para mostrar.
+            </td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Paginación inferior -->
+    <div class="d-flex align-items-center justify-content-between mt-2" *ngIf="hasPaging()">
+      <span class="text-medium-emphasis small">
+        Página {{ page() }} de {{ lastPage() }} — Total: {{ total() }}
+      </span>
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-secondary btn-sm"
+                (click)="prev()" [disabled]="page() <= 1">
+          Anterior
+        </button>
+        <button type="button" class="btn btn-outline-secondary btn-sm"
+                (click)="next()" [disabled]="page() >= lastPage()">
+          Siguiente
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+</div>
