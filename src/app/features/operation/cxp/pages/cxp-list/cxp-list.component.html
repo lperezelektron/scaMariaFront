@@ -3,7 +3,7 @@
   <!-- Encabezado -->
   <div class="crud-header">
     <div class="crud-title">
-      <h2>Cuentas por Cobrar</h2>
+      <h2>Cuentas por Pagar</h2>
       <small>{{ total() }} cuenta{{ total() !== 1 ? 's' : '' }}</small>
     </div>
     <div class="crud-actions">
@@ -14,7 +14,7 @@
   </div>
 
   <!-- Tarjetas de resumen -->
-  <div class="cxc-resumen" *ngIf="resumen() as r">
+  <div class="cxp-resumen" *ngIf="resumen() as r">
     <div class="resumen-card">
       <span class="resumen-label">Total pendiente</span>
       <span class="resumen-valor text-warning">{{ r.total_pendiente | number:'1.2-2' }}</span>
@@ -25,7 +25,7 @@
       <span class="resumen-valor text-danger">{{ r.total_vencido | number:'1.2-2' }}</span>
       <span class="resumen-sub">{{ r.num_vencidas }} cuenta{{ r.num_vencidas !== 1 ? 's' : '' }}</span>
     </div>
-    <div class="resumen-card">
+    <div class="resumen-card info">
       <span class="resumen-label">Por vencer (7 días)</span>
       <span class="resumen-valor text-info">{{ r.por_vencer_7dias | number:'1.2-2' }}</span>
     </div>
@@ -43,10 +43,10 @@
   <form [formGroup]="filtros" class="crud-toolbar">
 
     <div class="filter-group">
-      <label class="form-label mb-1">Cliente</label>
-      <select class="form-select" formControlName="cliente_id">
-        <option [ngValue]="null">Todos los clientes</option>
-        <option *ngFor="let c of clientes()" [ngValue]="c.id">{{ c.nombre }}</option>
+      <label class="form-label mb-1">Proveedor</label>
+      <select class="form-select" formControlName="proveedor_id">
+        <option [ngValue]="null">Todos los proveedores</option>
+        <option *ngFor="let p of proveedores()" [ngValue]="p.id">{{ p.nombre }}</option>
       </select>
     </div>
 
@@ -82,7 +82,7 @@
         <thead>
           <tr>
             <th style="width:80px;">#</th>
-            <th>Cliente</th>
+            <th>Proveedor</th>
             <th style="width:120px;">Fecha</th>
             <th style="width:130px;">Vencimiento</th>
             <th style="width:80px;">Días</th>
@@ -102,7 +102,7 @@
 
           <tr *ngFor="let c of items()" [class.row-vencida]="esVencida(c)">
             <td class="fw-semibold">#{{ c.id }}</td>
-            <td>{{ c.cliente?.nombre || ('Cliente #' + c.cliente_id) }}</td>
+            <td>{{ c.proveedor?.nombre || ('Proveedor #' + c.proveedor_id) }}</td>
             <td>{{ c.fecha | date:'dd-MMM-yyyy'}}</td>
             <td>{{ c.vencimiento | date:'dd-MMM-yyyy'}}</td>
             <td>
@@ -124,7 +124,7 @@
 
           <tr *ngIf="!loading() && items().length === 0">
             <td colspan="9" class="text-center py-4 text-medium-emphasis">
-              No hay cuentas por cobrar para mostrar.
+              No hay cuentas por pagar para mostrar.
             </td>
           </tr>
 

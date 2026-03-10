@@ -40,6 +40,8 @@ export class VentasShowComponent implements AfterViewInit {
         this.banner.set({ type: 'danger', text: 'No se pudo cargar la venta.' });
       },
     });
+
+    
   }
 
   ngAfterViewInit() {

@@ -84,7 +84,7 @@
 
           <tr *ngFor="let x of items()">
             <td>#{{ x.id }}</td>
-            <td>{{ x.fecha }}</td>
+            <td>{{ x.fecha | date:'dd-MMM-yyyy'}}</td>
             <td>{{ x.referencia }}</td>
             <td>{{ x.proveedor?.nombre || x.proveedor_id }}</td>
             <td class="text-end">{{ x.total | number: '1.2-2' }}</td>

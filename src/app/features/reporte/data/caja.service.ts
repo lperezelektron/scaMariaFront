@@ -1,12 +1,18 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { CajaIndexResponse, CorteCaja } from './caja.models';
+import { CajaIndexResponse, CorteCaja, MovimientoCaja } from './caja.models';
 import { environment } from '../../../../enviroments/environment';
 
 export interface CajaQuery {
   fecha?: string;
   tipo?: string;
+}
+
+export interface MovimientoPayload {
+  tipo: 'Entrada' | 'Salida';
+  cantidad: number;
+  referencia: string;
 }
 
 export interface CortesQuery {
@@ -38,5 +44,12 @@ export class CajaService {
 
   showCorte(id: number): Observable<CorteCaja> {
     return this.http.get<CorteCaja>(`${this.base}/api/caja/cortes/${id}`);
+  }
+
+  movimiento(payload: MovimientoPayload): Observable<{ message: string; movimiento: MovimientoCaja }> {
+    return this.http.post<{ message: string; movimiento: MovimientoCaja }>(
+      `${this.base}/api/caja/movimiento`,
+      payload,
+    );
   }
 }

@@ -22,6 +22,12 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./cxc/cxc.routes').then((m) => m.routes),
       },
+      {
+        path: 'cxp',
+        data: { title: 'Cuentas por Pagar' },
+        loadChildren: () =>
+          import('./cxp/cxp.routes').then((m) => m.routes),
+      },
     ],
   },
 ];

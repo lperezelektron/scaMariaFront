@@ -27,7 +27,7 @@
 
     <div class="ticket-header">
       <h3 class="ticket-title">Venta #{{ v.id }}</h3>
-      <p class="ticket-sub">Fecha: {{ v.fecha }}</p>
+      <p class="ticket-sub">Fecha: {{ v.fecha | date:'dd-MMM-yyyy'}}</p>
     </div>
 
     <hr />
