@@ -74,6 +74,7 @@ export class PosVentaComponent {
   clienteSearch = signal('');
   clientesFound = signal<any[]>([]);
   private clienteSearch$ = new Subject<string>();
+  private skipClienteSearch = false; // Flag para evitar búsqueda al seleccionar
 
   // Catálogo visual artículos (infinite)
   articuloSearch = signal('');
@@ -223,15 +224,22 @@ export class PosVentaComponent {
         this.formTouched.update(v => v + 1);
       });
 
-    // crédito -> requiere días
+    // crédito -> requiere días, forma de pago opcional
     this.form.controls.credito.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((isCredito) => {
         if (isCredito) {
+          // Si es crédito: días requeridos, forma de pago opcional y limpiada
           this.form.controls.dias_credito.setValidators([Validators.required, Validators.min(1)]);
+          this.form.controls.f_pago_id.clearValidators();
+          this.form.controls.f_pago_id.setValue(null); // Limpiar forma de pago
+          this.form.controls.f_pago_id.updateValueAndValidity();
         } else {
+          // Si no es crédito: días no requeridos, forma de pago requerida
           this.form.controls.dias_credito.clearValidators();
           this.form.controls.dias_credito.setValue(null);
+          this.form.controls.f_pago_id.setValidators([Validators.required]);
+          this.form.controls.f_pago_id.updateValueAndValidity();
         }
         this.form.controls.dias_credito.updateValueAndValidity();
       });
@@ -457,6 +465,12 @@ export class PosVentaComponent {
 
   // ====== Clientes ======
   onClienteSearch(v: string) {
+    // Si estamos saltando la búsqueda (porque se seleccionó un cliente), resetear flag y salir
+    if (this.skipClienteSearch) {
+      this.skipClienteSearch = false;
+      return;
+    }
+
     this.clienteSearch.set(v);
     this.clienteSearch$.next(v);
   }
@@ -481,6 +495,9 @@ export class PosVentaComponent {
   }
 
   selectCliente(c: any) {
+    // Activar flag para evitar búsqueda al actualizar clienteSearch
+    this.skipClienteSearch = true;
+
     this.form.patchValue({ cliente_id: c.id });
     this.clienteSearch.set(c.nombre ?? '');
     this.clientesFound.set([]);
@@ -829,7 +846,8 @@ export class PosVentaComponent {
 
   confirmExit(event: Event) {
     if (this.cart().length === 0) {
-      // Si no hay items, permitir salir directamente
+      // Si no hay items, navegar directamente sin confirmación
+      this.router.navigate(['/dashboard']);
       return;
     }
 

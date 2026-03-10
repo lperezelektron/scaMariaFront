@@ -6,7 +6,7 @@
 // custom tweaks for scrollbar styling (wip)
 @import "scrollbar";
 
- // custom calendar today cell color
+// custom calendar today cell color
 .calendar-cell.today {
   --cui-calendar-cell-today-color: var(--cui-info) !important;
 }
@@ -29,13 +29,13 @@
 
 // Header subtle shadow
 .header {
-  box-shadow: 0 4px 12px rgba(0,0,0,.04);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .04);
 }
 
 // Cards more elegant
 .card {
   border: none;
-  box-shadow: 0 8px 20px rgba(0,0,0,.04);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .04);
 }
 
 // Buttons more rounded
@@ -44,3 +44,91 @@
 }
 
 
+
+/* ========================================
+   ESTANDARIZACIÓN DE ANCHOS DE TABLAS
+======================================== */
+
+// Anchos mínimos para columnas comunes en todas las tablas
+table {
+
+  th,
+  td {
+
+    // ID / Número
+    &[style*="width:80px"],
+    &[style*="width: 80px"] {
+      min-width: 100px !important;
+      width: 100px !important;
+    }
+
+    // ID más grande
+    &[style*="width:110px"],
+    &[style*="width: 110px"] {
+      min-width: 120px !important;
+      width: 120px !important;
+    }
+
+    // Fechas
+    &[style*="width:120px"],
+    &[style*="width: 120px"] {
+      min-width: 140px !important;
+      width: 140px !important;
+    }
+
+    // Vencimiento / Fechas largas
+    &[style*="width:130px"],
+    &[style*="width: 130px"] {
+      min-width: 150px !important;
+      width: 150px !important;
+    }
+
+    // Acciones / Botones
+    &[style*="width:70px"],
+    &[style*="width: 70px"],
+    &[style*="width:90px"],
+    &[style*="width: 90px"] {
+      min-width: 100px !important;
+      width: 100px !important;
+    }
+
+    // Estados / Badges
+    &[style*="width:110px"],
+    &[style*="width: 110px"] {
+      min-width: 130px !important;
+      width: 130px !important;
+    }
+  }
+}
+
+// Asegurar que las tablas responsive no colapsen demasiado
+.table-responsive {
+  min-height: 200px;
+
+  table {
+    min-width: 100%;
+
+    // Columnas de texto (nombre, descripción, etc.) deben tener espacio
+    th:not([style*="width"]),
+    td:not([style*="width"]) {
+      min-width: 180px;
+    }
+  }
+}
+
+// Mejorar legibilidad de tablas
+.table {
+  th {
+    font-weight: 700;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    color: #4a5568;
+    white-space: nowrap;
+  }
+
+  td {
+    font-size: 0.9rem;
+    vertical-align: middle;
+  }
+}

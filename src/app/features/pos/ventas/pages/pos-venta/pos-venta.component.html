@@ -70,10 +70,14 @@
 
             <div class="art-grid" *ngIf="!gridLoading()">
               <button type="button" class="art-tile" *ngFor="let a of gridItems(); trackBy: trackByArticuloId"
-                (click)="selectArticulo(a)">
-                <div class="img">
+                (click)="selectArticulo(a)" [class.art-tile-image]="a.imagen_url" [class.art-tile-text]="!a.imagen_url">
+
+                <!-- Solo imagen cuando existe -->
+                <div class="img" *ngIf="a.imagen_url">
                   <img [src]="imgSrc(a)" [alt]="a.nombre" loading="lazy" decoding="async" />
                 </div>
+
+                <!-- Solo texto cuando no hay imagen -->
                 <div class="info" *ngIf="!a.imagen_url">
                   <div class="name">{{ a.nombre }}</div>
                   <div class="meta text-muted">
@@ -237,7 +241,10 @@
       </div>
 
       <div class="checkout-section" [formGroup]="form">
-        <label class="checkout-label">Forma de pago</label>
+        <label class="checkout-label">
+          Forma de pago
+          <span class="optional-badge" *ngIf="form.value.credito">(Opcional)</span>
+        </label>
         <select class="form-select form-select-sm" formControlName="f_pago_id">
           <option [ngValue]="null">Selecciona...</option>
           <option *ngFor="let f of formasPago()" [ngValue]="f.id">{{ f.descripcion }}</option>
