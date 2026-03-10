@@ -1,4 +1,4 @@
-import { ApplicationConfig, importProvidersFrom } from '@angular/core';
+import { ApplicationConfig, importProvidersFrom, LOCALE_ID } from '@angular/core';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import {
   provideRouter,
@@ -18,6 +18,10 @@ import {
   withInterceptorsFromDi,
 } from '@angular/common/http';
 import { authInterceptor } from './core/api/auth.interceptor';
+import { registerLocaleData } from '@angular/common';
+import localeMx from '@angular/common/locales/es-MX';
+
+registerLocaleData(localeMx);
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -39,5 +43,6 @@ export const appConfig: ApplicationConfig = {
     provideAnimations(),
     provideHttpClient(withInterceptorsFromDi()),
     { provide: HTTP_INTERCEPTORS, useClass: authInterceptor, multi: true },
+    {provide: LOCALE_ID, useValue: 'es-MX'},
   ],
 };

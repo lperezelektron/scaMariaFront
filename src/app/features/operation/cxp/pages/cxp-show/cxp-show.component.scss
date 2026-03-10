@@ -1,0 +1,38 @@
+.show-page { display: flex; flex-direction: column; gap: 1.25rem; max-width: 720px; margin: 0 auto; }
+
+.show-toolbar { display: flex; gap: .75rem; flex-wrap: wrap; align-items: center; }
+
+.cxp-card {
+  background: var(--cui-card-bg, #fff);
+  border-radius: .5rem;
+  padding: 1.5rem;
+  box-shadow: 0 .125rem .25rem rgba(0,0,0,.06);
+}
+
+.cxp-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.cxp-card-header h3 { font-weight: 700; margin: 0; }
+
+.badge-lg { font-size: .9rem; padding: .4em .8em; }
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem .75rem;
+}
+
+.info-item { display: flex; flex-direction: column; gap: .2rem; }
+.info-label { font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; opacity: .55; }
+
+.saldo-valor { font-size: 1.2rem; font-weight: 700; }
+
+@media (max-width: 576px) {
+  .show-page { max-width: 100%; }
+  .info-grid { grid-template-columns: 1fr 1fr; }
+}

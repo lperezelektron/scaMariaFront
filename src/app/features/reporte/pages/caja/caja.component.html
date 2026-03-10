@@ -9,6 +9,10 @@
       <button type="button" class="btn btn-outline-secondary" (click)="reload()">
         Refrescar
       </button>
+      <button type="button" class="btn btn-primary" (click)="openModal()"
+              *hasPermission="'caja.movimiento'">
+        + Movimiento
+      </button>
     </div>
   </div>
 
@@ -57,7 +61,8 @@
       (change)="onFecha($any($event.target).value)"
     />
 
-    <select class="form-select" style="max-width: 160px;" [value]="tipoFilter()" (change)="onTipo($any($event.target).value)">
+    <select class="form-select" style="max-width: 160px;"
+            [value]="tipoFilter()" (change)="onTipo($any($event.target).value)">
       <option value="">Todos los tipos</option>
       <option value="entrada">Entrada</option>
       <option value="salida">Salida</option>
@@ -86,3 +91,79 @@
   </div>
 
 </div>
+
+<!-- ── Modal: registrar movimiento ── -->
+<c-modal [visible]="modalVisible()" (visibleChange)="modalVisible.set($event)">
+  <c-modal-header>
+    <h5 class="modal-title">Registrar movimiento de caja</h5>
+  </c-modal-header>
+
+  <c-modal-body>
+    <form [formGroup]="movimientoForm" class="d-flex flex-column gap-3">
+
+      <!-- Tipo -->
+      <div>
+        <label class="form-label">Tipo de movimiento</label>
+        <div class="d-flex gap-4 mt-1">
+          <div class="form-check">
+            <input class="form-check-input" type="radio" id="tipoEntrada"
+                   formControlName="tipo" value="Entrada" />
+            <label class="form-check-label fw-semibold text-success" for="tipoEntrada">
+              Entrada
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" id="tipoSalida"
+                   formControlName="tipo" value="Salida" />
+            <label class="form-check-label fw-semibold text-danger" for="tipoSalida">
+              Salida
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cantidad -->
+      <div>
+        <label class="form-label">Cantidad</label>
+        <div class="input-group">
+          <span class="input-group-text">$</span>
+          <input type="number" class="form-control" formControlName="cantidad"
+                 min="0.01" step="0.01" placeholder="0.00" />
+        </div>
+        <div class="form-text text-danger"
+             *ngIf="movimientoForm.controls.cantidad.invalid && movimientoForm.controls.cantidad.touched">
+          Ingresa una cantidad mayor a cero.
+        </div>
+      </div>
+
+      <!-- Descripción -->
+      <div>
+        <label class="form-label">Descripción</label>
+        <input type="text" class="form-control" formControlName="referencia"
+               placeholder="Motivo o referencia del movimiento" maxlength="255" />
+        <div class="form-text text-danger"
+             *ngIf="movimientoForm.controls.referencia.invalid && movimientoForm.controls.referencia.touched">
+          La descripción es requerida.
+        </div>
+      </div>
+
+    </form>
+  </c-modal-body>
+
+  <c-modal-footer>
+    <button cButton color="secondary" variant="outline"
+            (click)="closeModal()" [disabled]="saving()">
+      Cancelar
+    </button>
+    <button cButton
+            [color]="movimientoForm.controls.tipo.value === 'Entrada' ? 'success' : 'danger'"
+            (click)="confirmarMovimiento()"
+            [disabled]="movimientoForm.invalid || saving()">
+      {{ saving()
+          ? 'Guardando...'
+          : (movimientoForm.controls.tipo.value === 'Entrada'
+              ? 'Registrar entrada'
+              : 'Registrar salida') }}
+    </button>
+  </c-modal-footer>
+</c-modal>
