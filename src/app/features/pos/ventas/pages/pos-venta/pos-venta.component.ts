@@ -13,6 +13,7 @@ import { FormasPagoService } from '../../../../catalog/formas-pago/data/formas-p
 import { AlmacenesService } from '../../../../settings/pages/almacenes/data/almacenes.service';
 import { LoteDisponible, VentaDetallePayload, VentaStorePayload } from '../../data/ventas.models';
 import { VentasService } from '../../data/ventas.service';
+import { getTodayString } from '../../../../../shared/utils/date.utils';
 
 
 type FieldErrors = Record<string, string[]>;
@@ -271,11 +272,7 @@ export class PosVentaComponent {
 
   // ====== Inicial ======
   private today(): string {
-    const d = new Date();
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
+    return getTodayString();
   }
 
   private loadCatalogos() {

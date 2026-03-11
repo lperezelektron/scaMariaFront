@@ -17,6 +17,7 @@ import { ProveedoresService } from '../../../../catalog/proveedores/data/proveed
 import { Compra, PaginatedResponse } from '../../data/compras.models';
 import { Proveedor } from '../../../../catalog/proveedores/data/proveedores.models';
 import { HasPermissionDirective } from '../../../../../core/directives/has-permission.directive';
+import { getTodayString } from '../../../../../shared/utils/date.utils';
 
 @Component({
   selector: 'app-compras-list',
@@ -54,8 +55,8 @@ export class ComprasListComponent {
 
   filtros = new FormGroup({
     proveedor_id: new FormControl<number | null>(null),
-    fecha_inicio: new FormControl<string | null>(null),
-    fecha_fin: new FormControl<string | null>(null),
+    fecha_inicio: new FormControl<string | null>(getTodayString()),
+    fecha_fin: new FormControl<string | null>(getTodayString()),
     mes: new FormControl<number | null>(null),
     anio: new FormControl<number | null>(null),
   });
