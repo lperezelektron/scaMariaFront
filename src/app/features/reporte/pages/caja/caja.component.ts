@@ -16,6 +16,7 @@ import {
 import { CajaService } from '../../data/caja.service';
 import { MovimientoCaja } from '../../data/caja.models';
 import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
+import { formatDate, getTodayString } from '../../../../shared/utils/date.utils';
 
 @Component({
   selector: 'app-caja',
@@ -72,7 +73,7 @@ export class CajaComponent {
       headerName: 'Fecha',
       field: 'fecha',
       width: 130,
-      valueFormatter: (p) => p.value ? new Date(p.value).toLocaleDateString('es-MX') : '-',
+      valueFormatter: (p) => formatDate(p.value),
     },
     {
       headerName: 'Tipo',
@@ -103,6 +104,7 @@ export class CajaComponent {
   ) {
     const qp = this.route.snapshot.queryParams;
     if (qp['fecha']) this.fecha.set(String(qp['fecha']));
+    else this.fecha.set(getTodayString()); // Inicializar con fecha actual
     if (qp['tipo'])  this.tipoFilter.set(String(qp['tipo']));
   }
 

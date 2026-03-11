@@ -23,6 +23,7 @@ import { Almacen } from '../../../../settings/pages/almacenes/data/almacenes.mod
 import { Articulo } from '../../../../catalog/articulos/data/articulos.models';
 import { CompraCreatePayload, CompraShowResponse } from '../../data/compras.models';
 import { HasPermissionDirective } from '../../../../../core/directives/has-permission.directive';
+import { getTodayString } from '../../../../../shared/utils/date.utils';
 
 type FormaPago = { id: number; descripcion: string };
 
@@ -76,7 +77,7 @@ export class CompraFormComponent {
   private readonly variedadRegex = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s\.\-]+$/;
 
   form = new FormGroup({
-    fecha: new FormControl<string>('', { nonNullable: true, validators: [Validators.required] }),
+    fecha: new FormControl<string>(getTodayString(), { nonNullable: true, validators: [Validators.required] }),
     referencia: new FormControl<string | null>(null),
 
     proveedor_id: new FormControl<number | null>(null, Validators.required),
