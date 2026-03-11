@@ -1,34 +1,52 @@
 <!--<c-header class="mb-4 d-print-none" position="sticky">-->
 <ng-container>
-  <c-container [fluid]="true" class="border-bottom px-4">
-    <button [cSidebarToggle]="sidebarId()" cHeaderToggler class="btn" toggle="visible"
+  <c-container [fluid]="true" class="border-bottom px-4 d-flex align-items-center flex-nowrap">
+    <button [cSidebarToggle]="sidebarId()" cHeaderToggler class="btn flex-shrink-0" toggle="visible"
       style="margin-inline-start: -14px;" aria-label="Toggle sidebar navigation">
       <svg cIcon name="cilMenu" size="lg"></svg>
     </button>
 
-    <c-header-nav class="d-none d-md-flex">
-      @for (item of topLinks; track item.url) {
-      <c-nav-item>
-        <a cNavLink [routerLink]="item.url" routerLinkActive="active">
-          {{ item.name }}
+    <div class="nav-chips-container">
+      <c-header-nav class="d-none d-md-flex align-items-center gap-2">
+        <!-- Rutas fijas -->
+        @for (item of fixedRoutes; track item.url) {
+        <a 
+          [routerLink]="item.url" 
+          routerLinkActive="nav-chip-active" 
+          [routerLinkActiveOptions]="{exact: false}"
+          class="nav-chip nav-chip-fixed">
+          {{ item.title }}
         </a>
-      </c-nav-item>
-      }
-    </c-header-nav>
+        }
+        
+        <!-- Separador visual si hay rutas dinámicas -->
+        @if (dynamicRoutes().length > 0) {
+        <div class="nav-separator"></div>
+        }
+        
+        <!-- Rutas dinámicas del historial -->
+        @for (item of dynamicRoutes(); track item.url) {
+        <div class="nav-chip-wrapper">
+          <a 
+            [routerLink]="item.url" 
+            routerLinkActive="nav-chip-active" 
+            [routerLinkActiveOptions]="{exact: false}"
+            class="nav-chip nav-chip-closable">
+            {{ item.title }}
+          </a>
+          <button 
+            type="button" 
+            class="btn-close btn-close-danger nav-chip-close" 
+            aria-label="Cerrar"
+            (click)="removeFromHistory(item.url, $event)"
+            title="Cerrar pestaña">
+          </button>
+        </div>
+        }
+      </c-header-nav>
+    </div>
 
-    <c-header-nav class="d-none d-md-flex ms-auto ">
-      <a cNavLink>
-        <svg cIcon class="my-1" name="cilBell" size="lg"></svg>
-      </a>
-      <a cNavLink>
-        <svg cIcon class="my-1" name="cilList" size="lg"></svg>
-      </a>
-      <a cNavLink>
-        <svg cIcon class="my-1" name="cilEnvelopeOpen" size="lg"></svg>
-      </a>
-    </c-header-nav>
-
-    <c-header-nav class="ms-auto ms-md-0">
+    <c-header-nav class="ms-auto flex-shrink-0">
       <div class="nav-item py-1">
         <div class="vr h-100 mx-2 text-body text-opacity-75"></div>
       </div>
@@ -38,7 +56,7 @@
       </div>
     </c-header-nav>
 
-    <c-header-nav class="mx-0">
+    <c-header-nav class="mx-0 flex-shrink-0">
       <ng-container *ngTemplateOutlet="userDropdown" />
     </c-header-nav>
 
@@ -52,8 +70,9 @@
 <ng-template #userDropdown>
   <c-dropdown [popperOptions]="{ placement: 'bottom-start' }" variant="nav-item">
     <button [caret]="false" cDropdownToggle class="py-0 pe-0" aria-label="Open user menu">
-      <c-avatar shape="rounded-1" [size]="'md'" src="./assets/images/avatars/8.jpg" status="success" textColor="primary"
-        alt="User avatar" />
+      <div class="user-avatar">
+        {{ getUserInitials() }}
+      </div>
     </button>
     
   </c-dropdown>

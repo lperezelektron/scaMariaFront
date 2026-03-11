@@ -12,6 +12,7 @@ import { VentasListService } from '../../data/ventas-list.service';
 import { AlmacenesService } from '../../../../settings/pages/almacenes/data/almacenes.service';
 import { VentaListItem, PaginatedResponse } from '../../data/ventas-list.models';
 import { Almacen } from '../../../../settings/pages/almacenes/data/almacenes.models';
+import { formatDate, getTodayString } from '../../../../../shared/utils/date.utils';
 
 @Component({
   selector: 'app-ventas-list',
@@ -33,7 +34,7 @@ export class VentasListComponent {
   banner    = signal<{ type: 'success' | 'danger' | 'info'; text: string } | null>(null);
 
   private today(): string {
-    return new Date().toISOString().split('T')[0];
+    return getTodayString();
   }
 
   filtros = new FormGroup({
@@ -57,7 +58,8 @@ export class VentasListComponent {
     {
       headerName: 'Fecha',
       field: 'fecha',
-      width: 120,
+      width: 130,
+      valueFormatter: (p) => formatDate(p.value),
     },
     {
       headerName: 'Cliente',

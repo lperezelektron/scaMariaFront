@@ -7,6 +7,7 @@ import { ColDef } from 'ag-grid-community';
 
 import { ClientesService } from '../../data/clientes.service';
 import { CtaXCobrar } from '../../data/clientes.models';
+import { formatDate } from '../../../../../shared/utils/date.utils';
 
 type FieldErrors = Record<string, string[]>;
 
@@ -51,7 +52,8 @@ export class ClienteFormComponent {
     {
       headerName: 'Fecha venta',
       width: 130,
-      valueGetter: (p) => p.data?.venta?.fecha ?? '-',
+      valueGetter: (p) => p.data?.venta?.fecha,
+      valueFormatter: (p) => formatDate(p.value),
     },
     {
       headerName: 'Total venta',
@@ -60,7 +62,12 @@ export class ClienteFormComponent {
       valueFormatter: (p) => this.money(p.value),
     },
 
-    { headerName: 'Venc.', field: 'vencimiento', width: 120 },
+    { 
+      headerName: 'Venc.', 
+      field: 'vencimiento', 
+      width: 130,
+      valueFormatter: (p) => formatDate(p.value),
+    },
 
     {
       headerName: 'Importe',
