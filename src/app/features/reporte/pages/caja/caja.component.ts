@@ -16,6 +16,8 @@ import {
 import { CajaService } from '../../data/caja.service';
 import { MovimientoCaja } from '../../data/caja.models';
 import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
+import { AlmacenesService } from '../../../settings/pages/almacenes/data/almacenes.service';
+import { Almacen } from '../../../settings/pages/almacenes/data/almacenes.models';
 
 @Component({
   selector: 'app-caja',
@@ -38,7 +40,9 @@ export class CajaComponent {
   private gridApi?: GridApi;
 
   // filtros
-  fecha = signal('');
+  fecha       = signal('');
+  almacenId   = signal<number | null>(null);
+  almacenes   = signal<Almacen[]>([]);
   tipoFilter = signal('');
 
   // resumen
@@ -55,10 +59,16 @@ export class CajaComponent {
   modalVisible = signal(false);
   saving       = signal(false);
 
+  // modal corte
+  corteModalVisible = signal(false);
+  cortando          = signal(false);
+  corteResultado    = signal<{ id: number; importe: number } | null>(null);
+
   movimientoForm = new FormGroup({
-    tipo:       new FormControl<'Entrada' | 'Salida'>('Entrada', Validators.required),
-    cantidad:   new FormControl<number | null>(null, [Validators.required, Validators.min(0.01)]),
-    referencia: new FormControl<string>('', [Validators.required, Validators.maxLength(255)]),
+    tipo:        new FormControl<'Entrada' | 'Salida'>('Entrada', Validators.required),
+    cantidad:    new FormControl<number | null>(null, [Validators.required, Validators.min(0.01)]),
+    referencia:  new FormControl<string>('', [Validators.required, Validators.maxLength(255)]),
+    almacen_id:  new FormControl<number | null>(null),
   });
 
   defaultColDef: ColDef = { sortable: true, resizable: true, filter: false };
@@ -98,12 +108,16 @@ export class CajaComponent {
 
   constructor(
     private cajaSvc: CajaService,
+    private almacenesSvc: AlmacenesService,
     private route: ActivatedRoute,
     private router: Router,
   ) {
     const qp = this.route.snapshot.queryParams;
-    if (qp['fecha']) this.fecha.set(String(qp['fecha']));
-    if (qp['tipo'])  this.tipoFilter.set(String(qp['tipo']));
+    if (qp['fecha'])       this.fecha.set(String(qp['fecha']));
+    if (qp['tipo'])        this.tipoFilter.set(String(qp['tipo']));
+    if (qp['almacen_id'])  this.almacenId.set(Number(qp['almacen_id']));
+
+    this.almacenesSvc.list({ activo: true }).subscribe((res) => this.almacenes.set(res));
   }
 
   onGridReady(e: GridReadyEvent) {
@@ -116,8 +130,9 @@ export class CajaComponent {
     this.gridApi?.showLoadingOverlay();
 
     this.cajaSvc.index({
-      fecha: this.fecha() || undefined,
-      tipo: this.tipoFilter() || undefined,
+      fecha:       this.fecha() || undefined,
+      tipo:        this.tipoFilter() || undefined,
+      almacen_id:  this.almacenId() ?? undefined,
     }).subscribe({
       next: (res) => {
         this.rows.set(res.movimientos);
@@ -150,9 +165,16 @@ export class CajaComponent {
     this.reload();
   }
 
+  onAlmacen(value: string) {
+    this.almacenId.set(value ? Number(value) : null);
+    this.syncQueryParams();
+    this.reload();
+  }
+
   limpiarFiltros() {
     this.fecha.set('');
     this.tipoFilter.set('');
+    this.almacenId.set(null);
     this.syncQueryParams();
     this.reload();
   }
@@ -160,7 +182,7 @@ export class CajaComponent {
   // ── Modal movimiento ──────────────────────────────────────
 
   openModal() {
-    this.movimientoForm.reset({ tipo: 'Entrada', cantidad: null, referencia: '' });
+    this.movimientoForm.reset({ tipo: 'Entrada', cantidad: null, referencia: '', almacen_id: this.almacenId() });
     this.modalVisible.set(true);
   }
 
@@ -171,11 +193,11 @@ export class CajaComponent {
   confirmarMovimiento() {
     if (this.movimientoForm.invalid) return;
 
-    const { tipo, cantidad, referencia } = this.movimientoForm.getRawValue();
+    const { tipo, cantidad, referencia, almacen_id } = this.movimientoForm.getRawValue();
 
     this.saving.set(true);
 
-    this.cajaSvc.movimiento({ tipo: tipo!, cantidad: cantidad!, referencia: referencia! }).subscribe({
+    this.cajaSvc.movimiento({ tipo: tipo!, cantidad: cantidad!, referencia: referencia!, almacen_id }).subscribe({
       next: (res) => {
         this.saving.set(false);
         this.modalVisible.set(false);
@@ -192,12 +214,48 @@ export class CajaComponent {
     });
   }
 
+  // ── Corte de caja ─────────────────────────────────────────
+
+  openCorteModal() {
+    this.corteResultado.set(null);
+    this.corteModalVisible.set(true);
+  }
+
+  closeCorteModal() {
+    this.corteModalVisible.set(false);
+  }
+
+  confirmarCorte() {
+    this.cortando.set(true);
+
+    this.cajaSvc.corte(this.almacenId()).subscribe({
+      next: (res) => {
+        this.cortando.set(false);
+        this.corteResultado.set({ id: res.corte.id, importe: res.importe });
+        this.reload();
+      },
+      error: (err) => {
+        this.cortando.set(false);
+        this.corteModalVisible.set(false);
+        this.banner.set({
+          type: 'danger',
+          text: err?.error?.message ?? 'No se pudo realizar el corte.',
+        });
+      },
+    });
+  }
+
+  irACortes() {
+    this.router.navigate(['/reporte/cortes']);
+  }
+
   private syncQueryParams() {
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: {
-        fecha: this.fecha() || undefined,
-        tipo: this.tipoFilter() || undefined,
+        fecha:       this.fecha() || undefined,
+        tipo:        this.tipoFilter() || undefined,
+        almacen_id:  this.almacenId() ?? undefined,
       },
       replaceUrl: true,
     });

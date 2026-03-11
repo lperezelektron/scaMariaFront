@@ -1,0 +1,89 @@
+<div class="show-page">
+
+  <!-- Toolbar -->
+  <div class="show-toolbar no-print">
+    <button type="button" class="btn btn-outline-secondary" (click)="volver()">
+      ← Cortes
+    </button>
+    <button type="button" class="btn btn-outline-primary" (click)="imprimir()"
+            [disabled]="loading() || !corte()">
+      Imprimir
+    </button>
+  </div>
+
+  <!-- Banner -->
+  <div *ngIf="banner() as b" class="alert alert-danger no-print">{{ b.text }}</div>
+
+  <!-- Cargando -->
+  <div *ngIf="loading()" class="text-center py-5 no-print">
+    <div class="spinner-border text-secondary" role="status"></div>
+  </div>
+
+  <!-- Contenido -->
+  <ng-container *ngIf="!loading() && corte() as c">
+
+    <!-- Encabezado del corte -->
+    <div class="corte-card">
+      <div class="corte-header">
+        <h3 class="mb-0">Corte de caja #{{ c.id }}</h3>
+        <span class="importe-badge" [class.text-success]="c.importe >= 0" [class.text-danger]="c.importe < 0">
+          ${{ c.importe | number:'1.2-2' }}
+        </span>
+      </div>
+
+      <hr />
+
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-label">Fecha</span>
+          <span>{{ c.fecha }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Realizado por</span>
+          <span>{{ c.user?.name ?? '-' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Almacén</span>
+          <span>{{ c.almacen?.descripcion ?? '-' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Movimientos</span>
+          <span>{{ c.movimientos?.length ?? 0 }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Entradas</span>
+          <span class="text-success fw-semibold">${{ totalEntradas() | number:'1.2-2' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Salidas</span>
+          <span class="text-danger fw-semibold">${{ totalSalidas() | number:'1.2-2' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Saldo neto</span>
+          <span class="fw-bold" [class.text-success]="c.importe >= 0" [class.text-danger]="c.importe < 0">
+            ${{ c.importe | number:'1.2-2' }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grid de movimientos -->
+    <div class="corte-card">
+      <h5 class="mb-3">Movimientos incluidos</h5>
+      <ag-grid-angular
+        class="ag-theme-alpine"
+        [theme]="'legacy'"
+        style="width: 100%; height: 420px;"
+        [rowData]="c.movimientos ?? []"
+        [columnDefs]="colDefs"
+        [defaultColDef]="defaultColDef"
+        [animateRows]="true"
+        [overlayNoRowsTemplate]="overlayNoRowsTemplate"
+        [overlayLoadingTemplate]="overlayLoadingTemplate"
+        (gridReady)="onGridReady($event)"
+      ></ag-grid-angular>
+    </div>
+
+  </ng-container>
+
+</div>

@@ -3,14 +3,21 @@
   <div class="crud-header">
     <div class="crud-title">
       <h2>Caja</h2>
-      <small>Movimientos del día / sin cerrar</small>
+      <small>Movimientos sin cerrar</small>
     </div>
     <div class="crud-actions">
+      <button type="button" class="btn btn-outline-secondary" (click)="irACortes()" *hasPermission="'caja.corte'">
+        Historial de cortes
+      </button>
       <button type="button" class="btn btn-outline-secondary" (click)="reload()">
         Refrescar
       </button>
       <button type="button" class="btn btn-primary" (click)="openModal()" *hasPermission="'caja.movimiento'">
         + Movimiento
+      </button>
+      <button type="button" class="btn btn-outline-warning" (click)="openCorteModal()"
+              [disabled]="!rows().length" *hasPermission="'caja.corte'">
+        Corte de caja
       </button>
     </div>
   </div>
@@ -51,8 +58,11 @@
 
   <!-- Toolbar de filtros -->
   <div class="crud-toolbar">
-    <input type="date" class="form-control" style="max-width: 180px;" [value]="fecha()"
-      (change)="onFecha($any($event.target).value)" />
+    <div class="filter-group">
+      <label class="form-label mb-1 text-muted small">Filtrar por fecha</label>
+      <input type="date" class="form-control" style="max-width: 180px;" [value]="fecha()"
+        (change)="onFecha($any($event.target).value)" />
+    </div>
 
     <select class="form-select" style="max-width: 160px;" [value]="tipoFilter()"
       (change)="onTipo($any($event.target).value)">
@@ -61,8 +71,14 @@
       <option value="salida">Salida</option>
     </select>
 
+    <select class="form-select" style="max-width: 200px;" [value]="almacenId() ?? ''"
+      (change)="onAlmacen($any($event.target).value)">
+      <option value="">Todos los almacenes</option>
+      <option *ngFor="let a of almacenes()" [value]="a.id">{{ a.descripcion }}</option>
+    </select>
+
     <button type="button" class="btn btn-outline-secondary" (click)="limpiarFiltros()"
-      [disabled]="!fecha() && !tipoFilter()">
+      [disabled]="!fecha() && !tipoFilter() && !almacenId()">
       Limpiar filtros
     </button>
   </div>
@@ -76,6 +92,59 @@
   </div>
 
 </div>
+
+<!-- ── Modal: corte de caja ── -->
+<c-modal [visible]="corteModalVisible()" (visibleChange)="corteModalVisible.set($event)">
+  <c-modal-header>
+    <h5 class="modal-title">Corte de caja</h5>
+  </c-modal-header>
+
+  <c-modal-body>
+
+    <!-- Resultado exitoso -->
+    <ng-container *ngIf="corteResultado() as r">
+      <div class="text-center py-2">
+        <div class="fs-1 mb-2">✅</div>
+        <p class="fw-semibold mb-1">Corte #{{ r.id }} realizado</p>
+        <p class="text-medium-emphasis mb-1">Los movimientos han sido cerrados.</p>
+        <p class="fs-5 fw-bold mt-3">
+          Importe del corte:
+          <span [class.text-success]="r.importe >= 0" [class.text-danger]="r.importe < 0">
+            ${{ r.importe | number:'1.2-2' }}
+          </span>
+        </p>
+      </div>
+    </ng-container>
+
+    <!-- Confirmación -->
+    <ng-container *ngIf="!corteResultado()">
+      <p>Se cerrarán <strong>{{ rows().length }}</strong> movimiento{{ rows().length !== 1 ? 's' : '' }} pendientes.</p>
+      <div class="d-flex justify-content-between text-medium-emphasis small mt-2">
+        <span>Entradas: <strong class="text-success">${{ totalEntradas() | number:'1.2-2' }}</strong></span>
+        <span>Salidas: <strong class="text-danger">${{ totalSalidas() | number:'1.2-2' }}</strong></span>
+        <span>Saldo: <strong class="text-primary">${{ saldoActual() | number:'1.2-2' }}</strong></span>
+      </div>
+      <div class="alert alert-warning mt-3 mb-0 small">
+        Esta acción no se puede deshacer.
+      </div>
+    </ng-container>
+
+  </c-modal-body>
+
+  <c-modal-footer>
+    <ng-container *ngIf="corteResultado(); else confirmButtons">
+      <button cButton color="primary" (click)="closeCorteModal()">Cerrar</button>
+    </ng-container>
+    <ng-template #confirmButtons>
+      <button cButton color="secondary" variant="outline" (click)="closeCorteModal()" [disabled]="cortando()">
+        Cancelar
+      </button>
+      <button cButton color="warning" (click)="confirmarCorte()" [disabled]="cortando()">
+        {{ cortando() ? 'Procesando...' : 'Confirmar corte' }}
+      </button>
+    </ng-template>
+  </c-modal-footer>
+</c-modal>
 
 <!-- ── Modal: registrar movimiento ── -->
 <c-modal [visible]="modalVisible()" (visibleChange)="modalVisible.set($event)">
@@ -128,6 +197,15 @@
           *ngIf="movimientoForm.controls.referencia.invalid && movimientoForm.controls.referencia.touched">
           La descripción es requerida.
         </div>
+      </div>
+
+      <!-- Almacén -->
+      <div *ngIf="almacenes().length">
+        <label class="form-label">Almacén <span class="text-muted small">(opcional)</span></label>
+        <select class="form-select" formControlName="almacen_id">
+          <option [ngValue]="null">— Sin almacén —</option>
+          <option *ngFor="let a of almacenes()" [ngValue]="a.id">{{ a.descripcion }}</option>
+        </select>
       </div>
 
     </form>
