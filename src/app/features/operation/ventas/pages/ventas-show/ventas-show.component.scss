@@ -1,67 +1,195 @@
-.show-page { display: flex; flex-direction: column; gap: 1rem; max-width: 680px; margin: 0 auto; }
+// ── Variables ──────────────────────────────────────────────
+$ticket-font: 'Courier New', Courier, monospace;
+$ticket-width: 320px;   // ancho en pantalla (aprox 80mm a 96dpi)
+$font-size-base: 13px;
 
-.show-toolbar { display: flex; gap: .75rem; flex-wrap: wrap; }
+// ── Wrapper en pantalla ────────────────────────────────────
+.ticket-wrapper {
+  display: flex;
+  justify-content: center;
+}
 
+// ── Ticket base ────────────────────────────────────────────
 .ticket {
-  background: var(--cui-card-bg, #fff);
-  border-radius: .5rem;
-  padding: 1.5rem;
-  box-shadow: 0 .125rem .25rem rgba(0,0,0,.06);
+  width: $ticket-width;
+  font-family: $ticket-font;
+  font-size: $font-size-base;
+  color: #111;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 16px 14px;
+  box-shadow: 2px 2px 8px rgba(0,0,0,.12);
+
+  // ── Encabezado ──
+  .ticket-header {
+    text-align: center;
+    margin-bottom: 6px;
+
+    .store-name {
+      font-size: 15px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .store-sub {
+      font-size: 11px;
+      color: #555;
+    }
+  }
+
+  // ── Separadores ──
+  .ticket-sep {
+    border-top: 1px dashed #888;
+    margin: 6px 0;
+  }
+
+  .ticket-sep-thin {
+    border-top: 1px solid #aaa;
+    margin: 3px 0;
+  }
+
+  // ── Filas de datos ──
+  .ticket-row {
+    display: flex;
+    gap: 4px;
+    font-size: 12px;
+    line-height: 1.55;
+
+    .label {
+      min-width: 90px;
+      font-weight: bold;
+    }
+  }
+
+  // ── Tabla de artículos ──
+  .ticket-items-header,
+  .ticket-item {
+    display: grid;
+    grid-template-columns: 1fr 42px 54px 54px;
+    font-size: 11px;
+    line-height: 1.6;
+
+    .item-qty,
+    .item-price,
+    .item-sub { text-align: right; }
+  }
+
+  .ticket-items-header {
+    font-weight: bold;
+    font-size: 11px;
+  }
+
+  .ticket-item + .ticket-item {
+    border-top: 1px dotted #ddd;
+    padding-top: 2px;
+  }
+
+  .ticket-empty {
+    font-size: 11px;
+    color: #888;
+    text-align: center;
+    padding: 4px 0;
+  }
+
+  // ── Totales ──
+  .ticket-total-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .total-final {
+    font-weight: bold;
+    font-size: 15px;
+    margin-top: 2px;
+  }
+
+  // ── Pie ──
+  .ticket-footer {
+    text-align: center;
+    font-size: 11px;
+    color: #555;
+    margin-top: 2px;
+  }
 }
 
-.ticket-header { text-align: center; margin-bottom: .5rem; }
-.ticket-title  { font-size: 1.4rem; font-weight: 700; margin: 0; }
-.ticket-sub    { margin: .25rem 0 0; color: var(--cui-body-color); opacity: .7; }
 
-.ticket-info { display: flex; flex-direction: column; gap: .35rem; }
-
-.info-row {
-  display: flex;
-  gap: .5rem;
-  font-size: .9rem;
-}
-
-.info-label { font-weight: 600; min-width: 130px; flex-shrink: 0; }
-
-.ticket-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: .875rem;
-}
-
-.ticket-table th,
-.ticket-table td {
-  padding: .35rem .5rem;
-  border-bottom: 1px solid var(--cui-border-color, #dee2e6);
-}
-
-.ticket-table th { font-weight: 600; }
-
-.ticket-totals { display: flex; flex-direction: column; gap: .3rem; align-items: flex-end; }
-
-.total-row {
-  display: flex;
-  gap: 1.5rem;
-  font-size: .9rem;
-}
-
-.total-final {
-  font-weight: 700;
-  font-size: 1.1rem;
-  margin-top: .25rem;
-}
-
-.ticket-footer { text-align: center; font-size: .85rem; opacity: .6; margin: .5rem 0 0; }
-
-/* ── Estilos de impresión ── */
+// ── IMPRESIÓN ─────────────────────────────────────────────
 @media print {
-  .no-print { display: none !important; }
 
-  .show-page { max-width: 100%; margin: 0; }
+  @page {
+    size: 80mm auto;   // papel POS 80mm, altura automática
+    margin: 4mm 2mm;
+  }
 
+  // Ocultar elementos de UI
+  .no-print {
+    display: none !important;
+  }
+
+  // Quitar márgenes generales del body
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  .page-wrapper {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .ticket-wrapper {
+    display: block;
+  }
+
+  // Ticket en impresión: fuente más pequeña, sin decoración
   .ticket {
-    box-shadow: none;
-    border-radius: 0;
-    padding: .5rem;
+    width: 100% !important;
+    max-width: 76mm !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    font-size: 9pt !important;
+    color: #000 !important;
+
+    .ticket-header {
+      .store-name { font-size: 11pt !important; }
+      .store-sub  { font-size: 8pt !important; color: #000 !important; }
+    }
+
+    .ticket-sep {
+      border-top: 1px dashed #000 !important;
+    }
+
+    .ticket-sep-thin {
+      border-top: 1px solid #000 !important;
+    }
+
+    .ticket-row {
+      font-size: 8pt !important;
+      .label { min-width: 72pt; }
+    }
+
+    .ticket-items-header,
+    .ticket-item {
+      font-size: 8pt !important;
+      grid-template-columns: 1fr 30pt 38pt 38pt !important;
+    }
+
+    .ticket-total-row { font-size: 8pt !important; }
+
+    .total-final { font-size: 11pt !important; }
+
+    .ticket-footer {
+      font-size: 8pt !important;
+      color: #000 !important;
+    }
   }
 }

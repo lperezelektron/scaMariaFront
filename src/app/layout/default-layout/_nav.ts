@@ -42,7 +42,7 @@ export const navItems: INavDataPerm[] = [
     name: 'Compras',
     url: '/operation/compras',
     iconComponent: { name: 'cil-share-boxed' },
-    permissions: ['ventas.ver'],
+    permissions: ['compras.ver'],
   },
 
   { title: true, name: 'Catálogos' },

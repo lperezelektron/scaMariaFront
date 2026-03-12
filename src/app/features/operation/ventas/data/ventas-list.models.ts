@@ -19,7 +19,7 @@ export interface VentaListItem {
   estatus?: string | null;
 
   cliente?: { id: number; nombre: string } | null;
-  almacen?: { id: number; descripcion: string } | null;
+  almacen?: { id: number; descripcion: string; direccion: string; ciudad?: string; telefono?: string; } | null;
   forma_pago?: { id: number; descripcion: string } | null;
   user?: { id: number; name: string } | null;
 }
@@ -33,7 +33,8 @@ export interface VentaDetalle {
   impuestos?: number | null;
   subtotal?: number | null;
 
-  articulo?: { id: number; nombre: string; unidad?: string | null } | null;
+  articulo?: { id: number; nombre: string; nombre_corto?: string; unidad?: string | null } | null;
+  lote?: {id: number; variedad?: string | null} | null;
 }
 
 export interface VentaShow extends VentaListItem {
