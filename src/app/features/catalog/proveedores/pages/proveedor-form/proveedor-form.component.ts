@@ -7,6 +7,7 @@ import { ColDef } from 'ag-grid-community';
 
 import { ProveedoresService } from '../../data/proveedores.service';
 import { CtaXPagar } from '../../data/proveedores.models';
+import { formatDate } from '../../../../../shared/utils/date.utils';
 
 type FieldErrors = Record<string, string[]>;
 
@@ -44,8 +45,18 @@ export class ProveedorFormComponent {
   ecColDefs: ColDef<CtaXPagar>[] = [
     { headerName: 'CxP ID', field: 'id', width: 100 },
     { headerName: 'Compra ID', field: 'compra_id', width: 110 },
-    { headerName: 'Fecha', field: 'fecha', width: 120 },
-    { headerName: 'Venc.', field: 'vencimiento', width: 120 },
+    { 
+      headerName: 'Fecha', 
+      field: 'fecha', 
+      width: 130,
+      valueFormatter: (p) => formatDate(p.value),
+    },
+    { 
+      headerName: 'Venc.', 
+      field: 'vencimiento', 
+      width: 130,
+      valueFormatter: (p) => formatDate(p.value),
+    },
     {
       headerName: 'Importe',
       field: 'importe',

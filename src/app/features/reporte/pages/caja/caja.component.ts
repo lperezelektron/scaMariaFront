@@ -18,6 +18,7 @@ import { MovimientoCaja } from '../../data/caja.models';
 import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 import { AlmacenesService } from '../../../settings/pages/almacenes/data/almacenes.service';
 import { Almacen } from '../../../settings/pages/almacenes/data/almacenes.models';
+import { formatDate, getTodayString } from '../../../../shared/utils/date.utils';
 
 @Component({
   selector: 'app-caja',
@@ -82,7 +83,7 @@ export class CajaComponent {
       headerName: 'Fecha',
       field: 'fecha',
       width: 130,
-      valueFormatter: (p) => p.value ? new Date(p.value).toLocaleDateString('es-MX') : '-',
+      valueFormatter: (p) => formatDate(p.value),
     },
     {
       headerName: 'Tipo',
@@ -113,11 +114,10 @@ export class CajaComponent {
     private router: Router,
   ) {
     const qp = this.route.snapshot.queryParams;
-    if (qp['fecha'])       this.fecha.set(String(qp['fecha']));
-    if (qp['tipo'])        this.tipoFilter.set(String(qp['tipo']));
+    if (qp['fecha']) this.fecha.set(String(qp['fecha']));
+    else this.fecha.set(getTodayString()); // Inicializar con fecha actual
+    if (qp['tipo'])  this.tipoFilter.set(String(qp['tipo']));
     if (qp['almacen_id'])  this.almacenId.set(Number(qp['almacen_id']));
-
-    this.almacenesSvc.list({ activo: true }).subscribe((res) => this.almacenes.set(res));
   }
 
   onGridReady(e: GridReadyEvent) {

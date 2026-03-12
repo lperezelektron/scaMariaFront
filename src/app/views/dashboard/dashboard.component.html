@@ -1,0 +1,257 @@
+<div class="dashboard-container">
+  <!-- Loading State -->
+  @if (loading) {
+  <c-row>
+    <c-col xs="12" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+      <p class="mt-3 text-body-secondary">Cargando datos del dashboard...</p>
+    </c-col>
+  </c-row>
+  }
+
+  <!-- Error State -->
+  @if (error && !loading) {
+  <c-row>
+    <c-col xs="12">
+      <c-card class="border-danger">
+        <c-card-body class="text-center py-4">
+          <svg cIcon name="cilWarning" size="xl" class="text-danger mb-3"></svg>
+          <h5 class="text-danger">{{ error }}</h5>
+          <button cButton color="primary" (click)="loadDashboard()" class="mt-3">
+            <svg cIcon name="cilReload" class="me-2"></svg>
+            Reintentar
+          </button>
+        </c-card-body>
+      </c-card>
+    </c-col>
+  </c-row>
+  }
+
+  <!-- Dashboard Content -->
+  @if (dashboardData && !loading) {
+  
+  <!-- Ventas -->
+  <c-row class="mb-4">
+    <c-col xs="12">
+      <h4 class="mb-3">
+        <svg cIcon name="cilCart" class="me-2"></svg>
+        Ventas
+      </h4>
+    </c-col>
+    
+    <c-col xs="12" sm="6" lg="3">
+      <c-card class="mb-3 text-white bg-primary">
+        <c-card-body>
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="fs-6 fw-semibold">Ventas Hoy</div>
+              <div class="fs-4 fw-bold mt-2">
+                {{ dashboardData.ventas_hoy | currency:'MXN':'symbol':'1.2-2' }}
+              </div>
+            </div>
+            <div class="fs-1 opacity-50">
+              <svg cIcon name="cilDollar"></svg>
+            </div>
+          </div>
+        </c-card-body>
+      </c-card>
+    </c-col>
+
+    <c-col xs="12" sm="6" lg="3">
+      <c-card class="mb-3 text-white bg-success">
+        <c-card-body>
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="fs-6 fw-semibold">Ventas del Mes</div>
+              <div class="fs-4 fw-bold mt-2">
+                {{ dashboardData.ventas_mes | currency:'MXN':'symbol':'1.2-2' }}
+              </div>
+            </div>
+            <div class="fs-1 opacity-50">
+              <svg cIcon name="cilChartLine"></svg>
+            </div>
+          </div>
+        </c-card-body>
+      </c-card>
+    </c-col>
+
+    <c-col xs="12" sm="6" lg="3">
+      <c-card class="mb-3 text-white bg-info">
+        <c-card-body>
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="fs-6 fw-semibold">Tickets Hoy</div>
+              <div class="fs-4 fw-bold mt-2">
+                {{ dashboardData.tickets_hoy }}
+              </div>
+            </div>
+            <div class="fs-1 opacity-50">
+              <svg cIcon name="cilReceipt"></svg>
+            </div>
+          </div>
+        </c-card-body>
+      </c-card>
+    </c-col>
+
+    <c-col xs="12" sm="6" lg="3">
+      <c-card class="mb-3 text-white bg-warning">
+        <c-card-body>
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="fs-6 fw-semibold">Compras del Mes</div>
+              <div class="fs-4 fw-bold mt-2">
+                {{ dashboardData.compras_mes | currency:'MXN':'symbol':'1.2-2' }}
+              </div>
+            </div>
+            <div class="fs-1 opacity-50">
+              <svg cIcon name="cilShoppingCart"></svg>
+            </div>
+          </div>
+        </c-card-body>
+      </c-card>
+    </c-col>
+  </c-row>
+
+  <!-- Caja -->
+  <c-row class="mb-4">
+    <c-col xs="12">
+      <h4 class="mb-3">
+        <svg cIcon name="cilCash" class="me-2"></svg>
+        Caja
+      </h4>
+    </c-col>
+
+    <c-col xs="12" sm="6">
+      <c-card class="mb-3">
+        <c-card-body>
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="text-body-secondary small">Saldo Actual</div>
+              <div class="fs-4 fw-semibold">
+                {{ dashboardData.saldo_caja | currency:'MXN':'symbol':'1.2-2' }}
+              </div>
+            </div>
+            <div class="text-primary">
+              <svg cIcon name="cilWallet" size="3xl"></svg>
+            </div>
+          </div>
+        </c-card-body>
+      </c-card>
+    </c-col>
+
+    <c-col xs="12" sm="6">
+      <c-card class="mb-3">
+        <c-card-body>
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="text-body-secondary small">Saldo Hoy</div>
+              <div class="fs-4 fw-semibold">
+                {{ dashboardData.saldo_caja_hoy | currency:'MXN':'symbol':'1.2-2' }}
+              </div>
+            </div>
+            <div class="text-success">
+              <svg cIcon name="cilMoney" size="3xl"></svg>
+            </div>
+          </div>
+        </c-card-body>
+      </c-card>
+    </c-col>
+  </c-row>
+
+  <!-- Cuentas por Cobrar y Pagar -->
+  <c-row class="mb-4">
+    <c-col xs="12" lg="6">
+      <c-card class="mb-3">
+        <c-card-header>
+          <strong>
+            <svg cIcon name="cilArrowCircleRight" class="me-2"></svg>
+            Cuentas por Cobrar
+          </strong>
+        </c-card-header>
+        <c-card-body>
+          <div class="mb-3">
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-body-secondary">Total Pendiente</span>
+              <strong>{{ cxcTotal | currency:'MXN':'symbol':'1.2-2' }}</strong>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <div class="d-flex justify-content-between mb-1">
+              <span>Al Corriente</span>
+              <span>{{ dashboardData.cxc_pendiente | currency:'MXN':'symbol':'1.2-2' }}</span>
+            </div>
+            <c-progress thin>
+              <c-progress-bar 
+                [value]="cxcTotal > 0 ? (dashboardData.cxc_pendiente / cxcTotal) * 100 : 0" 
+                color="success">
+              </c-progress-bar>
+            </c-progress>
+          </div>
+
+          <div>
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-danger">Vencidas</span>
+              <span class="text-danger">{{ dashboardData.cxc_vencida | currency:'MXN':'symbol':'1.2-2' }}</span>
+            </div>
+            <c-progress thin>
+              <c-progress-bar 
+                [value]="cxcVencidaPct" 
+                color="danger">
+              </c-progress-bar>
+            </c-progress>
+          </div>
+        </c-card-body>
+      </c-card>
+    </c-col>
+
+    <c-col xs="12" lg="6">
+      <c-card class="mb-3">
+        <c-card-header>
+          <strong>
+            <svg cIcon name="cilArrowCircleLeft" class="me-2"></svg>
+            Cuentas por Pagar
+          </strong>
+        </c-card-header>
+        <c-card-body>
+          <div class="mb-3">
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-body-secondary">Total Pendiente</span>
+              <strong>{{ cxpTotal | currency:'MXN':'symbol':'1.2-2' }}</strong>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <div class="d-flex justify-content-between mb-1">
+              <span>Al Corriente</span>
+              <span>{{ dashboardData.cxp_pendiente | currency:'MXN':'symbol':'1.2-2' }}</span>
+            </div>
+            <c-progress thin>
+              <c-progress-bar 
+                [value]="cxpTotal > 0 ? (dashboardData.cxp_pendiente / cxpTotal) * 100 : 0" 
+                color="info">
+              </c-progress-bar>
+            </c-progress>
+          </div>
+
+          <div>
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-danger">Vencidas</span>
+              <span class="text-danger">{{ dashboardData.cxp_vencida | currency:'MXN':'symbol':'1.2-2' }}</span>
+            </div>
+            <c-progress thin>
+              <c-progress-bar 
+                [value]="cxpVencidaPct" 
+                color="danger">
+              </c-progress-bar>
+            </c-progress>
+          </div>
+        </c-card-body>
+      </c-card>
+    </c-col>
+  </c-row>
+
+  }
+</div>

@@ -1,10 +1,6 @@
 import { NgStyle, NgTemplateOutlet } from '@angular/common';
 import { Component, computed, inject, input } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
-import { navItems, INavDataPerm } from '../_nav'; 
-
-
-type TopLink = { name: string; url: string };
 
 import {
   AvatarComponent,
@@ -28,11 +24,14 @@ import {
   SidebarToggleDirective,
   TextColorDirective,
   ThemeDirective,
+  ButtonDirective,
+  ButtonCloseDirective,
 } from '@coreui/angular';
 
 import { IconDirective } from '@coreui/icons-angular';
 import { AuthService } from 'src/app/core/auth/auth.service';
 import { UserStorageService } from 'src/app/core/storage/user-storage.service';
+import { NavigationHistoryService, NavigationItem } from 'src/app/core/services/navigation-history.service';
 
 @Component({
   selector: 'app-default-header',
@@ -63,6 +62,8 @@ import { UserStorageService } from 'src/app/core/storage/user-storage.service';
     ProgressBarDirective,
     ProgressComponent,
     NgStyle,
+    ButtonDirective,
+    ButtonCloseDirective,
   ],
 })
 export class DefaultHeaderComponent extends HeaderComponent {
@@ -72,8 +73,11 @@ export class DefaultHeaderComponent extends HeaderComponent {
   private router = inject(Router);
   private auth = inject(AuthService);
   private userStorage = inject(UserStorageService);
+  private navHistory = inject(NavigationHistoryService);
 
-  public topLinks: TopLink[] = [];
+  // Rutas fijas y dinámicas
+  public fixedRoutes: NavigationItem[] = [];
+  public dynamicRoutes = this.navHistory.history;
 
   readonly colorModes = [
     { name: 'light', text: 'Light', icon: 'cilSun' },
@@ -91,42 +95,29 @@ export class DefaultHeaderComponent extends HeaderComponent {
 
   constructor() {
     super();
-    this.topLinks = this.buildTopLinks(navItems);
+    this.fixedRoutes = this.navHistory.getFixedRoutes();
   }
 
-  private buildTopLinks(items: INavDataPerm[]): TopLink[] {
-    // Solo padres: items de primer nivel (navItems ya lo es), excluye titles y logout
-    const parents = items.filter(
-      (i) => !i.title && !!i.url && i.url !== '/logout',
-    );
-
-    // Filtrar por permisos (si el padre tiene children, se muestra si:
-    // - el padre está permitido, o
-    // - cualquier child está permitido
-    const allowedParents = parents.filter((i) => this.canSee(i));
-
-    // Convertir a links para el menú superior
-    return allowedParents.map((i) => ({
-      name: String(i.name ?? ''),
-      url: String(i.url ?? ''),
-    }));
+  removeFromHistory(url: string, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.navHistory.removeFromHistory(url);
   }
 
-  private canSee(item: INavDataPerm): boolean {
-    const perms = item.permissions;
+  isActiveRoute(url: string): boolean {
+    return this.router.url.startsWith(url);
+  }
 
-    // si no pide permisos -> visible
-    if (!perms || perms.length === 0) return true;
-
-    // si el usuario tiene alguno
-    if (this.userStorage.hasAny(perms)) return true;
-
-    // si NO tiene permisos directos, pero algún hijo sí, mostramos el padre
-    if (item.children?.length) {
-      return item.children.some((ch) => this.canSee(ch));
+  getUserInitials(): string {
+    const user = this.userStorage.get();
+    if (!user?.name) return 'U';
+    
+    const names = user.name.trim().split(' ');
+    if (names.length === 1) {
+      return names[0].substring(0, 2).toUpperCase();
     }
-
-    return false;
+    
+    return (names[0][0] + names[names.length - 1][0]).toUpperCase();
   }
 
   logout(ev?: Event) {

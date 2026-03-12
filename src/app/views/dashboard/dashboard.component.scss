@@ -1,7 +1,36 @@
-:host {
-  .legend {
-    small {
-      font-size: x-small;
+.dashboard-container {
+  padding: 0;
+}
+
+c-widget-stat-a {
+  cursor: default;
+  
+  ::ng-deep .card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
+  }
+}
+
+c-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+}
+
+h4 {
+  font-weight: 600;
+  color: var(--cui-body-color);
+  display: flex;
+  align-items: center;
+  
+  svg {
+    color: var(--cui-primary);
   }
 }
