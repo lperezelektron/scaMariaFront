@@ -18,6 +18,7 @@ import { MovimientoCaja } from '../../data/caja.models';
 import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 import { AlmacenesService } from '../../../settings/pages/almacenes/data/almacenes.service';
 import { Almacen } from '../../../settings/pages/almacenes/data/almacenes.models';
+import { UserStorageService } from '../../../../core/storage/user-storage.service';
 import { formatDate, getTodayString } from '../../../../shared/utils/date.utils';
 
 @Component({
@@ -39,6 +40,9 @@ import { formatDate, getTodayString } from '../../../../shared/utils/date.utils'
 })
 export class CajaComponent {
   private gridApi?: GridApi;
+
+  // almacén fijo del usuario (oculta el selector)
+  almacenFijo = signal(false);
 
   // filtros
   fecha       = signal('');
@@ -110,19 +114,34 @@ export class CajaComponent {
   constructor(
     private cajaSvc: CajaService,
     private almacenesSvc: AlmacenesService,
+    private userStorage: UserStorageService,
     private route: ActivatedRoute,
     private router: Router,
   ) {
     const qp = this.route.snapshot.queryParams;
     if (qp['fecha']) this.fecha.set(String(qp['fecha']));
-    else this.fecha.set(getTodayString()); // Inicializar con fecha actual
-    if (qp['tipo'])  this.tipoFilter.set(String(qp['tipo']));
-    if (qp['almacen_id'])  this.almacenId.set(Number(qp['almacen_id']));
+    else this.fecha.set(getTodayString());
+    if (qp['tipo']) this.tipoFilter.set(String(qp['tipo']));
+
+    // Si el usuario tiene almacén asignado, usarlo siempre y ocultar el selector
+    const userAlmacen = this.userStorage.get()?.almacen_id;
+    if (userAlmacen) {
+      this.almacenId.set(userAlmacen);
+      this.almacenFijo.set(true);
+    } else if (qp['almacen_id']) {
+      this.almacenId.set(Number(qp['almacen_id']));
+    }
+
+    this.almacenesSvc.list({ activo: true }).subscribe({
+      next: (list) => this.almacenes.set(list),
+    });
   }
 
   onGridReady(e: GridReadyEvent) {
     this.gridApi = e.api;
-    this.reload();
+    if (this.almacenId() !== null) {
+      this.reload();
+    }
   }
 
   reload() {
@@ -174,7 +193,6 @@ export class CajaComponent {
   limpiarFiltros() {
     this.fecha.set('');
     this.tipoFilter.set('');
-    this.almacenId.set(null);
     this.syncQueryParams();
     this.reload();
   }
@@ -253,9 +271,9 @@ export class CajaComponent {
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: {
+        almacen_id:  this.almacenId() ?? undefined,
         fecha:       this.fecha() || undefined,
         tipo:        this.tipoFilter() || undefined,
-        almacen_id:  this.almacenId() ?? undefined,
       },
       replaceUrl: true,
     });

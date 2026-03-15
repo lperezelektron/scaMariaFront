@@ -28,68 +28,79 @@
     {{ b.text }}
   </div>
 
-  <!-- Tarjetas de resumen -->
-  <div class="row g-3 mb-2">
-    <div class="col-12 col-sm-4">
-      <div class="card text-center">
-        <div class="card-body py-3">
-          <div class="text-muted small mb-1">Saldo actual</div>
-          <div class="fs-4 fw-bold text-primary">${{ saldoActual() | number:'1.2-2' }}</div>
-        </div>
-      </div>
-    </div>
-    <div class="col-12 col-sm-4">
-      <div class="card text-center">
-        <div class="card-body py-3">
-          <div class="text-muted small mb-1">Entradas</div>
-          <div class="fs-4 fw-bold text-success">${{ totalEntradas() | number:'1.2-2' }}</div>
-        </div>
-      </div>
-    </div>
-    <div class="col-12 col-sm-4">
-      <div class="card text-center">
-        <div class="card-body py-3">
-          <div class="text-muted small mb-1">Salidas</div>
-          <div class="fs-4 fw-bold text-danger">${{ totalSalidas() | number:'1.2-2' }}</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Toolbar de filtros -->
-  <div class="crud-toolbar">
-    <div class="filter-group">
-      <!-- <label class="form-label mb-1 text-muted small">Filtrar por fecha</label> -->
-      <input type="date" class="form-control" style="max-width: 180px;" [value]="fecha()"
-        (change)="onFecha($any($event.target).value)" />
-    </div>
-
-    <select class="form-select" style="max-width: 160px;" [value]="tipoFilter()"
-      (change)="onTipo($any($event.target).value)">
-      <option value="">Todos los tipos</option>
-      <option value="entrada">Entrada</option>
-      <option value="salida">Salida</option>
-    </select>
-
-    <select class="form-select" style="max-width: 200px;" [value]="almacenId() ?? ''"
+  <!-- Selector de almacén (solo si el usuario no tiene uno asignado) -->
+  <div *ngIf="!almacenFijo()" class="d-flex align-items-center gap-2 mb-3">
+    <label class="form-label mb-0 fw-semibold text-nowrap">Almacén:</label>
+    <select class="form-select" style="max-width: 280px;" [value]="almacenId() ?? ''"
       (change)="onAlmacen($any($event.target).value)">
-      <option value="">Todos los almacenes</option>
+      <option value="">— Selecciona un almacén —</option>
       <option *ngFor="let a of almacenes()" [value]="a.id">{{ a.descripcion }}</option>
     </select>
-
-    <button type="button" class="btn btn-outline-secondary" (click)="limpiarFiltros()"
-      [disabled]="!fecha() && !tipoFilter() && !almacenId()">
-      Limpiar filtros
-    </button>
   </div>
 
-  <!-- Grid -->
-  <div class="crud-grid">
-    <ag-grid-angular class="ag-theme-alpine" [theme]="'legacy'" style="width: 100%; height: 520px;" [rowData]="rows()"
-      [columnDefs]="colDefs" [defaultColDef]="defaultColDef" [animateRows]="true"
-      [overlayNoRowsTemplate]="overlayNoRowsTemplate" [overlayLoadingTemplate]="overlayLoadingTemplate"
-      (gridReady)="onGridReady($event)"></ag-grid-angular>
+  <!-- Sin almacén seleccionado -->
+  <div *ngIf="almacenId() === null" class="text-center text-muted py-5">
+    Selecciona un almacén para ver los movimientos de caja.
   </div>
+
+  <!-- Contenido (sólo cuando hay almacén seleccionado) -->
+  <ng-container *ngIf="almacenId() !== null">
+
+    <!-- Tarjetas de resumen -->
+    <div class="row g-3 mb-2">
+      <div class="col-12 col-sm-4">
+        <div class="card text-center">
+          <div class="card-body py-3">
+            <div class="text-muted small mb-1">Saldo actual</div>
+            <div class="fs-4 fw-bold text-primary">${{ saldoActual() | number:'1.2-2' }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-sm-4">
+        <div class="card text-center">
+          <div class="card-body py-3">
+            <div class="text-muted small mb-1">Entradas</div>
+            <div class="fs-4 fw-bold text-success">${{ totalEntradas() | number:'1.2-2' }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-sm-4">
+        <div class="card text-center">
+          <div class="card-body py-3">
+            <div class="text-muted small mb-1">Salidas</div>
+            <div class="fs-4 fw-bold text-danger">${{ totalSalidas() | number:'1.2-2' }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toolbar de filtros -->
+    <div class="crud-toolbar">
+      <input type="date" class="form-control" style="max-width: 180px;" [value]="fecha()"
+        (change)="onFecha($any($event.target).value)" />
+
+      <select class="form-select" style="max-width: 160px;" [value]="tipoFilter()"
+        (change)="onTipo($any($event.target).value)">
+        <option value="">Todos los tipos</option>
+        <option value="entrada">Entrada</option>
+        <option value="salida">Salida</option>
+      </select>
+
+      <button type="button" class="btn btn-outline-secondary" (click)="limpiarFiltros()"
+        [disabled]="!fecha() && !tipoFilter()">
+        Limpiar filtros
+      </button>
+    </div>
+
+    <!-- Grid -->
+    <div class="crud-grid">
+      <ag-grid-angular class="ag-theme-alpine" [theme]="'legacy'" style="width: 100%; height: 520px;" [rowData]="rows()"
+        [columnDefs]="colDefs" [defaultColDef]="defaultColDef" [animateRows]="true"
+        [overlayNoRowsTemplate]="overlayNoRowsTemplate" [overlayLoadingTemplate]="overlayLoadingTemplate"
+        (gridReady)="onGridReady($event)"></ag-grid-angular>
+    </div>
+
+  </ng-container>
 
 </div>
 

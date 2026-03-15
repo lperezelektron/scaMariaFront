@@ -8,6 +8,7 @@ export interface LimoneroUser {
   email: string;
   role: string;
   permisos: string[];
+  almacen_id?: number | null;
 }
 
 @Injectable({

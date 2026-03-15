@@ -9,6 +9,7 @@ export interface InventarioQuery {
   per_page: number;
   almacen_id?: number | null;
   articulo_id?: number | null;
+  categoria_id?: number | null;
   search?: string;
   stock_bajo?: boolean;
 }
@@ -24,12 +25,17 @@ export class InventarioService {
       .set('page', q.page)
       .set('per_page', q.per_page);
 
-    if (q.almacen_id) params = params.set('almacen_id', q.almacen_id);
-    if (q.articulo_id) params = params.set('articulo_id', q.articulo_id);
-    if (q.search) params = params.set('search', q.search);
-    if (q.stock_bajo) params = params.set('stock_bajo', '1');
+    if (q.almacen_id)   params = params.set('almacen_id', q.almacen_id);
+    if (q.articulo_id)  params = params.set('articulo_id', q.articulo_id);
+    if (q.categoria_id) params = params.set('categoria_id', q.categoria_id);
+    if (q.search)       params = params.set('search', q.search);
+    if (q.stock_bajo)   params = params.set('stock_bajo', '1');
 
     return this.http.get<Paginated<InventarioRow>>(`${this.base}/api/inventario`, { params });
+  }
+
+  updatePrecios(id: number, payload: { precio?: number; precio_min?: number }): Observable<any> {
+    return this.http.patch(`${this.base}/api/inventario/${id}/precios`, payload);
   }
 
   almacenes(): Observable<Almacen[]> {
