@@ -1,0 +1,34 @@
+.show-page { display: flex; flex-direction: column; gap: 1.25rem; }
+.show-toolbar { display: flex; gap: .75rem; flex-wrap: wrap; }
+
+.corte-card {
+  background: var(--cui-card-bg, #fff);
+  border-radius: .5rem;
+  padding: 1.5rem;
+  box-shadow: 0 .125rem .25rem rgba(0,0,0,.06);
+}
+
+.corte-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.importe-badge { font-size: 1.6rem; font-weight: 700; }
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1rem .75rem;
+}
+
+.info-item { display: flex; flex-direction: column; gap: .2rem; }
+.info-label { font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; opacity: .55; }
+
+@media print {
+  .no-print { display: none !important; }
+  .show-page { gap: .75rem; }
+  .corte-card { box-shadow: none; border-radius: 0; padding: .5rem; }
+}

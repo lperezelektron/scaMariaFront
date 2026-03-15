@@ -1,14 +1,13 @@
-<div class="show-page">
+<div class="page-wrapper mx-auto" style="max-width:680px">
 
   <!-- Toolbar (oculto al imprimir) -->
-  <div class="show-toolbar no-print">
+  <div class="d-flex gap-2 flex-wrap mb-3 no-print">
     <button type="button" class="btn btn-outline-secondary" (click)="volver()">
       ← Regresar
     </button>
-
     <button type="button" class="btn btn-outline-primary" (click)="imprimir()"
             [disabled]="loading() || !venta()">
-      Imprimir
+      🖨 Imprimir ticket
     </button>
   </div>
 
@@ -22,85 +21,90 @@
     <c-spinner></c-spinner>
   </div>
 
-  <!-- Contenido imprimible -->
-  <div *ngIf="!loading() && venta() as v" class="ticket">
+  <!-- ── TICKET ── -->
+  <div *ngIf="!loading() && venta() as v" class="ticket-wrapper">
+    <div class="ticket">
 
-    <div class="ticket-header">
-      <h3 class="ticket-title">Venta #{{ v.id }}</h3>
-      <p class="ticket-sub">Fecha: {{ v.fecha | date:'dd-MMM-yyyy'}}</p>
-    </div>
+      <!-- Encabezado -->
+      <div class="ticket-header">
+        <div class="store-name">{{ v.almacen?.descripcion }}</div>
+        <div class="store-sub" *ngIf="v.almacen?.direccion">{{ v.almacen?.direccion }}</div>
+        <div class="store-sub" *ngIf="v.almacen?.ciudad">{{ v.almacen?.ciudad }}</div>
+        <div class="store-sub" *ngIf="v.almacen?.telefono">Tel: {{ v.almacen?.telefono }}</div>
+      </div>
 
-    <hr />
+      <div class="ticket-sep"></div>
 
-    <div class="ticket-info">
-      <div class="info-row">
-        <span class="info-label">Cliente:</span>
+      <!-- Datos de la venta -->
+      <div class="ticket-row">
+        <span class="label">Ticket #:</span>
+        <span>{{ v.id }}</span>
+      </div>
+      <div class="ticket-row">
+        <span class="label">Fecha:</span>
+        <span>{{ v.fecha | date:'dd/MMM/yyyy' }}</span>
+      </div>
+      <div class="ticket-row">
+        <span class="label">Cliente:</span>
         <span>{{ v.cliente?.nombre || ('ID ' + v.cliente_id) }}</span>
       </div>
-      <div class="info-row">
-        <span class="info-label">Almacén:</span>
-        <span>{{ v.almacen?.descripcion || ('-') }}</span>
+      <div class="ticket-row">
+        <span class="label">Forma pago:</span>
+        <span>{{ v.forma_pago?.descripcion || '-' }}</span>
       </div>
-      <div class="info-row">
-        <span class="info-label">Forma de pago:</span>
-        <span>{{ v.forma_pago?.descripcion || ('-') }}</span>
-      </div>
-      <div class="info-row" *ngIf="v.credito">
-        <span class="info-label">Días de crédito:</span>
-        <span>{{ v.dias_credito ?? '-' }}</span>
-      </div>
-      <div class="info-row" *ngIf="v.user">
-        <span class="info-label">Atendió:</span>
+      <div class="ticket-row" *ngIf="v.user">
+        <span class="label">Atendió:</span>
         <span>{{ v.user!.name }}</span>
       </div>
-    </div>
 
-    <hr />
+      <div class="ticket-sep"></div>
 
-    <!-- Detalle de artículos -->
-    <table class="ticket-table" *ngIf="v.detalles?.length">
-      <thead>
-        <tr>
-          <th class="text-start">Artículo</th>
-          <th class="text-end">Cant.</th>
-          <th class="text-end">Precio</th>
-          <th class="text-end">Subtotal</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let d of v.detalles">
-          <td>{{ d.articulo?.nombre || ('Art. #' + d.articulo_id) }}</td>
-          <td class="text-end">{{ d.cantidad | number:'1.0-3' }}</td>
-          <td class="text-end">{{ d.precio | number:'1.2-2' }}</td>
-          <td class="text-end">{{ subtotalDetalle(d.cantidad, d.precio) | number:'1.2-2' }}</td>
-        </tr>
-      </tbody>
-    </table>
+      <!-- Encabezado de artículos -->
+      <div class="ticket-items-header">
+        <span class="item-name">Artículo</span>
+        <span class="item-qty">Cant</span>
+        <span class="item-price">P/U</span>
+        <span class="item-sub">Total</span>
+      </div>
+      <div class="ticket-sep-thin"></div>
 
-    <p *ngIf="!v.detalles?.length" class="text-medium-emphasis">Sin detalle de artículos.</p>
+      <!-- Artículos -->
+      <ng-container *ngIf="v.detalles?.length; else sinDetalle">
+        <div class="ticket-item" *ngFor="let d of v.detalles">
+          <span class="item-name">{{ d.articulo?.nombre_corto }} {{ d.lote?.variedad }}</span>
+          <span class="item-qty">{{ d.cantidad | number:'1.0-3' }}</span>
+          <span class="item-price">{{ d.precio | number:'1.2-2' }}</span>
+          <span class="item-sub">{{ subtotalDetalle(d.cantidad, d.precio) | number:'1.2-2' }}</span>
+        </div>
+      </ng-container>
+      <ng-template #sinDetalle>
+        <div class="ticket-empty">Sin detalle de artículos.</div>
+      </ng-template>
 
-    <hr />
+      <div class="ticket-sep"></div>
 
-    <!-- Totales -->
-    <div class="ticket-totals">
-      <div class="total-row">
-        <span>Subtotal:</span>
+      <!-- Totales -->
+      <div class="ticket-total-row">
+        <span>Subtotal</span>
         <span>{{ v.subtotal | number:'1.2-2' }}</span>
       </div>
-      <div class="total-row" *ngIf="v.impuestos">
-        <span>Impuestos:</span>
+      <div class="ticket-total-row" *ngIf="v.impuestos">
+        <span>Impuestos</span>
         <span>{{ v.impuestos | number:'1.2-2' }}</span>
       </div>
-      <div class="total-row total-final">
-        <span>Total:</span>
+      <div class="ticket-total-row total-final">
+        <span>TOTAL</span>
         <span>{{ v.total | number:'1.2-2' }}</span>
       </div>
+
+      <div class="ticket-sep"></div>
+
+      <!-- Pie -->
+      <div class="ticket-footer">
+        ¡Gracias por su compra!
+      </div>
+
     </div>
-
-    <hr />
-
-    <p class="ticket-footer">Gracias por su compra.</p>
-
   </div>
 
 </div>

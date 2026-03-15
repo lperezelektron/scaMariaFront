@@ -5,8 +5,10 @@ export interface MovimientoCaja {
   referencia: string;
   fecha: string;
   user_id: number;
-  corte_caja_id: number | null;
+  corte_id: number | null;
+  almacen_id?: number | null;
   user?: { id: number; name: string };
+  almacen?: { id: number; descripcion: string } | null;
 }
 
 export interface CajaIndexResponse {
@@ -23,6 +25,8 @@ export interface CorteCaja {
   fecha: string;
   importe: number;
   user_id: number;
+  almacen_id?: number | null;
   user?: { id: number; name: string };
+  almacen?: { id: number; descripcion: string } | null;
   movimientos?: MovimientoCaja[];
 }

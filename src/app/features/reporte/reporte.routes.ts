@@ -12,7 +12,21 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/caja/caja.component').then((m) => m.CajaComponent),
       },
-{
+      {
+        path: 'cortes',
+        canMatch: [permissionMatch('caja.corte')],
+        data: { title: 'Cortes de Caja' },
+        loadComponent: () =>
+          import('./pages/cortes/cortes-list.component').then((m) => m.CortesListComponent),
+      },
+      {
+        path: 'cortes/:id',
+        canMatch: [permissionMatch('caja.corte')],
+        data: { title: 'Detalle de Corte' },
+        loadComponent: () =>
+          import('./pages/cortes/corte-show.component').then((m) => m.CorteShowComponent),
+      },
+      {
         path: '',
         redirectTo: 'caja',
         pathMatch: 'full',
