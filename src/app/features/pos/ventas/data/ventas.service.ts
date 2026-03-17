@@ -21,4 +21,12 @@ export class VentasService {
   store(payload: VentaStorePayload): Observable<VentaStoreResponse> {
     return this.http.post<VentaStoreResponse>(`${this.base}/api/ventas`, payload);
   }
+
+  /** Descarga los bytes ESC/POS del ticket de una venta (80mm = cols 48) */
+  getTicket(ventaId: number, cols: number = 48): Observable<ArrayBuffer> {
+    return this.http.get(`${this.base}/api/ventas/${ventaId}/ticket`, {
+      params: { cols: String(cols) },
+      responseType: 'arraybuffer',
+    });
+  }
 }

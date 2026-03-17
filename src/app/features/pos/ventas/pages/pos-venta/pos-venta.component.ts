@@ -13,6 +13,7 @@ import { FormasPagoService } from '../../../../catalog/formas-pago/data/formas-p
 import { AlmacenesService } from '../../../../settings/pages/almacenes/data/almacenes.service';
 import { LoteDisponible, VentaDetallePayload, VentaStorePayload } from '../../data/ventas.models';
 import { VentasService } from '../../data/ventas.service';
+import { PrinterService } from '../../../../../shared/services/printer.service';
 import { getTodayString } from '../../../../../shared/utils/date.utils';
 
 
@@ -44,6 +45,7 @@ export class PosVentaComponent {
   private router = inject(Router);
 
   private ventasSvc = inject(VentasService);
+  printerSvc = inject(PrinterService);
   private articulosSvc = inject(ArticulosService);
   private categoriasSvc = inject(CategoriasService);
 
@@ -185,6 +187,14 @@ export class PosVentaComponent {
 
     return true;
   });
+
+  // Impresión
+  lastVentaId        = signal<number | null>(null);
+  printing           = signal(false);
+  showPrintDialog    = signal(false);
+  showPrinterPicker  = signal(false);
+  printers           = signal<string[]>([]);
+  loadingPrinters    = signal(false);
 
   confirmOpen = signal(false);
   confirmTitle = signal('Confirmar acción');
@@ -795,7 +805,10 @@ export class PosVentaComponent {
     this.ventasSvc.store(payload).subscribe({
       next: (res) => {
         this.saving.set(false);
+        const ventaId = res?.venta?.id ?? null;
+        this.lastVentaId.set(ventaId);
         this.banner.set({ type: 'success', text: res?.message ?? 'Venta registrada.' });
+        if (ventaId) this.showPrintDialog.set(true);
 
         // reset conservando almacén/pago
         const keepAlmacen = raw.almacen_id;
@@ -829,6 +842,87 @@ export class PosVentaComponent {
         this.banner.set({ type: 'danger', text: err?.error?.message ?? 'Error al registrar la venta.' });
       },
     });
+  }
+
+  // ====== Impresión ======
+  printTicket(ventaId: number | null = this.lastVentaId()) {
+    if (!ventaId) return;
+
+    // Si no hay impresora guardada, abrir el selector primero
+    if (!this.printerSvc.printerName()) {
+      this.openPrinterPicker(ventaId);
+      return;
+    }
+
+    this.printing.set(true);
+
+    this.ventasSvc.getTicket(ventaId, 48).subscribe({
+      next: async (data) => {
+        try {
+          await this.printerSvc.print(data);
+          this.banner.set({ type: 'success', text: 'Ticket enviado a la impresora.' });
+        } catch (err: any) {
+          if (err?.message === 'NO_PRINTER') {
+            this.openPrinterPicker(ventaId);
+          } else {
+            const msg: string = err?.message ?? '';
+            const qzOffline = msg.includes('Unable to establish') || msg.includes('websocket');
+            this.banner.set({
+              type: 'danger',
+              text: qzOffline
+                ? 'QZ Tray no está corriendo. Ábrelo e intenta de nuevo.'
+                : (msg || 'Error al enviar a la impresora.'),
+            });
+          }
+        } finally {
+          this.printing.set(false);
+        }
+      },
+      error: () => {
+        this.printing.set(false);
+        this.banner.set({ type: 'danger', text: 'Error al obtener el ticket del servidor.' });
+      },
+    });
+  }
+
+  openPrinterPicker(ventaId?: number | null) {
+    this.loadingPrinters.set(true);
+    this.showPrinterPicker.set(true);
+
+    this.printerSvc.getPrinters().then((list) => {
+      this.printers.set(list);
+      this.loadingPrinters.set(false);
+    }).catch((err: any) => {
+      this.loadingPrinters.set(false);
+      this.showPrinterPicker.set(false);
+      const msg: string = err?.message ?? '';
+      const qzOffline = msg.includes('Unable to establish') || msg.includes('websocket');
+      this.banner.set({
+        type: 'danger',
+        text: qzOffline
+          ? 'QZ Tray no está corriendo. Ábrelo e intenta de nuevo.'
+          : (msg || 'No se pudo conectar a QZ Tray.'),
+      });
+    });
+  }
+
+  selectPrinter(name: string, ventaId: number | null = this.lastVentaId()) {
+    this.printerSvc.setPrinter(name);
+    this.showPrinterPicker.set(false);
+    if (ventaId) this.printTicket(ventaId);
+  }
+
+  closePrinterPicker() {
+    this.showPrinterPicker.set(false);
+  }
+
+  confirmPrint() {
+    this.showPrintDialog.set(false);
+    this.printTicket();
+  }
+
+  declinePrint() {
+    this.showPrintDialog.set(false);
   }
 
   // ====== Helpers ======
