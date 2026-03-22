@@ -88,17 +88,14 @@
               <button type="button" class="art-tile" *ngFor="let a of gridItems(); trackBy: trackByArticuloId"
                 (click)="selectArticulo(a)" [class.art-tile-image]="a.imagen_url" [class.art-tile-text]="!a.imagen_url">
 
-                <!-- Solo imagen cuando existe -->
+                <!-- Imagen si existe -->
                 <div class="img" *ngIf="a.imagen_url">
                   <img [src]="imgSrc(a)" [alt]="a.nombre" loading="lazy" decoding="async" />
                 </div>
 
-                <!-- Solo texto cuando no hay imagen -->
-                <div class="info" *ngIf="!a.imagen_url">
+                <!-- Nombre siempre visible -->
+                <div class="info">
                   <div class="name">{{ a.nombre }}</div>
-                  <div class="meta text-muted">
-                    {{ a.categoria?.descripcion || ('Cat #' + a.categoria_id) }}
-                  </div>
                 </div>
               </button>
 
