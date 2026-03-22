@@ -34,6 +34,9 @@ export class NavigationHistoryService {
   // Signal para el historial reactivo
   public history = signal<NavigationItem[]>([]);
 
+  // Última URL procesada para evitar duplicados por doble evento
+  private lastProcessedUrl: string = '';
+
   constructor(private router: Router) {
     this.loadHistory();
     this.initNavigationListener();
@@ -43,13 +46,16 @@ export class NavigationHistoryService {
     this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe((event: NavigationEnd) => {
-        this.addToHistory(event.urlAfterRedirects);
+        const cleanUrl = event.urlAfterRedirects.split('?')[0].split('#')[0];
+        if (cleanUrl === this.lastProcessedUrl) return;
+        this.lastProcessedUrl = cleanUrl;
+        this.addToHistory(cleanUrl);
       });
   }
 
   private addToHistory(url: string): void {
-    // Limpiar query params y fragments
-    const cleanUrl = url.split('?')[0].split('#')[0];
+    // url ya viene limpia desde el listener
+    const cleanUrl = url;
 
     // Verificar si es una ruta excluida
     if (this.isExcludedRoute(cleanUrl)) {
@@ -169,7 +175,17 @@ export class NavigationHistoryService {
       const stored = localStorage.getItem(this.STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored) as NavigationItem[];
-        this.history.set(parsed);
+        // Deduplicar por URL al cargar (por si quedaron duplicados de versiones anteriores)
+        const seen = new Set<string>();
+        const deduped = parsed.filter(item => {
+          if (seen.has(item.url)) return false;
+          seen.add(item.url);
+          return true;
+        });
+        this.history.set(deduped);
+        if (deduped.length !== parsed.length) {
+          this.saveHistory(deduped);
+        }
       }
     } catch (e) {
       console.error('Error loading navigation history:', e);

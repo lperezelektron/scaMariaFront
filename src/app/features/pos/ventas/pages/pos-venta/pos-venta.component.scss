@@ -82,15 +82,19 @@
 .pos-sale {
   display: flex;
   flex-direction: column;
+  height: 100vh;
+  height: 100dvh; // Safari iOS support
+  overflow: hidden;
   gap: 10px;
-  height: 100%;
-  min-height: 0;
+  padding: 10px;
+  box-sizing: border-box;
 }
 
 /* ===========================
    HEADER POS INTEGRADO
 =========================== */
 .pos-header {
+  flex-shrink: 0;
   height: 64px;
   display: flex;
   align-items: center;
@@ -102,7 +106,6 @@
   color: white;
   box-shadow: 0 2px 6px rgba(0, 0, 0, .15);
   border-radius: .9rem;
-  flex-shrink: 0;
 
   transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -233,7 +236,6 @@
   gap: 10px;
   flex: 1;
   min-height: 0;
-  height: calc(100vh - 150px);
   overflow: hidden;
 }
 
@@ -244,7 +246,6 @@
   grid-template-columns: 1fr 1.2fr;
   gap: 10px;
   overflow: hidden;
-  margin-right: 0;
   transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -256,8 +257,8 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  height: 100%;
   min-height: 0;
+  height: 100%;
 }
 
 .panel-header {
@@ -289,6 +290,8 @@
   overflow: hidden;
   padding: 12px;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ✅ Header catálogo en columna */
@@ -402,7 +405,8 @@
   border: 1px solid rgba(0, 0, 0, .08);
   border-radius: .9rem;
   padding: 10px;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
@@ -506,6 +510,7 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
+  flex: 1;
 }
 
 .ticket-section {
@@ -1020,6 +1025,7 @@
 
   display: flex;
   flex-direction: column;
+  overflow: hidden; // Safari: evita que el contenido desborde
 
   transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
@@ -1045,6 +1051,7 @@
 }
 
 .btn-close-checkout {
+  flex-shrink: 0;
   width: 40px;
   height: 40px;
   border: 0;
@@ -1059,8 +1066,24 @@
 
 .checkout-body {
   flex: 1;
+  min-height: 0; // Safari: necesario para que flex + overflow funcione
   overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
   padding: 16px 20px;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, .18);
+    border-radius: 999px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, .04);
+  }
 }
 
 .checkout-section {
