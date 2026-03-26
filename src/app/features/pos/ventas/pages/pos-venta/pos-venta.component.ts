@@ -10,6 +10,7 @@ import { CategoriasService } from '../../../../catalog/articulos/data/categorias
 
 import { ClientesService } from '../../../../catalog/clientes/data/clientes.service';
 import { FormasPagoService } from '../../../../catalog/formas-pago/data/formas-pago.service';
+import { EmpleadosService } from '../../../../catalog/empleados/data/empleados.service';
 import { AlmacenesService } from '../../../../settings/pages/almacenes/data/almacenes.service';
 import { LoteDisponible, VentaDetallePayload, VentaStorePayload } from '../../data/ventas.models';
 import { VentasService } from '../../data/ventas.service';
@@ -52,6 +53,7 @@ export class PosVentaComponent {
   private clientesSvc = inject(ClientesService);
   private formasPagoSvc = inject(FormasPagoService);
   private almacenesSvc = inject(AlmacenesService);
+  private empleadosSvc = inject(EmpleadosService);
 
   private precioDraft = new Map<string, string>();
   private cantidadDraft = new Map<string, string>();
@@ -68,6 +70,7 @@ export class PosVentaComponent {
   // Catálogos
   almacenes = signal<any[]>([]);
   formasPago = signal<any[]>([]);
+  empleados = signal<any[]>([]);
   categorias = signal<{ id: number; descripcion: string }[]>([]);
 
   // Selecciones (solo UI)
@@ -105,6 +108,7 @@ export class PosVentaComponent {
     almacen_id: [null as number | null, [Validators.required]],
     cliente_id: [null as number | null, [Validators.required]],
     f_pago_id: [null as number | null, [Validators.required]],
+    empleado_id: [null as number | null],
     credito: [false],
     dias_credito: [null as number | null],
   });
@@ -195,6 +199,8 @@ export class PosVentaComponent {
   showPrinterPicker  = signal(false);
   printers           = signal<string[]>([]);
   loadingPrinters    = signal(false);
+
+  printCopies = signal<number>(Number(localStorage.getItem('pos_print_copies')) || 0);
 
   confirmOpen = signal(false);
   confirmTitle = signal('Confirmar acción');
@@ -302,9 +308,13 @@ export class PosVentaComponent {
     // formas pago
     this.formasPagoSvc.list().subscribe({
       next: (rows) => this.formasPago.set(rows ?? []),
-      error: () => {
-        // silencioso
-      }
+      error: () => {}
+    });
+
+    // empleados
+    this.empleadosSvc.list().subscribe({
+      next: (rows) => this.empleados.set((rows ?? []).filter((e: any) => e.activo)),
+      error: () => {}
     });
 
     // categorías (con manejo de errores mejorado)
@@ -791,6 +801,7 @@ export class PosVentaComponent {
       cliente_id: raw.cliente_id!,
       almacen_id: raw.almacen_id!,
       f_pago_id: raw.f_pago_id!,
+      empleado_id: raw.empleado_id ?? null,
       credito: !!raw.credito,
       dias_credito: raw.credito ? (raw.dias_credito ?? undefined) : undefined,
       subtotal: this.round2(this.subtotal()),
@@ -844,7 +855,7 @@ export class PosVentaComponent {
   }
 
   // ====== Impresión ======
-  printTicket(ventaId: number | null = this.lastVentaId()) {
+  printTicket(ventaId: number | null = this.lastVentaId(), copies = 0) {
     if (!ventaId) return;
 
     // Si no hay impresora guardada, abrir el selector primero
@@ -858,7 +869,10 @@ export class PosVentaComponent {
     this.ventasSvc.getTicket(ventaId, 48).subscribe({
       next: async (data) => {
         try {
-          await this.printerSvc.print(data);
+          const total = 1 + copies;
+          for (let i = 0; i < total; i++) {
+            await this.printerSvc.print(data);
+          }
           this.banner.set({ type: 'success', text: 'Ticket enviado a la impresora.' });
         } catch (err: any) {
           if (err?.message === 'NO_PRINTER') {
@@ -916,8 +930,10 @@ export class PosVentaComponent {
   }
 
   confirmPrint() {
+    const copies = this.printCopies();
+    localStorage.setItem('pos_print_copies', String(copies));
     this.showPrintDialog.set(false);
-    this.printTicket();
+    this.printTicket(this.lastVentaId(), copies);
   }
 
   declinePrint() {

@@ -12,6 +12,7 @@ export interface Articulo {
   categoria_id: number;
   categoria?: Categoria;
   activo: boolean;
+  orden: number | null;
   inventarios_sum_existencia?: number;
   imagen?: string | null;
   imagen_url?: string | null;

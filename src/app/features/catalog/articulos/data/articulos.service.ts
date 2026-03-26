@@ -46,4 +46,8 @@ export class ArticulosService {
   delete(id: number): Observable<any> {
     return this.http.delete(`${this.base}/api/articulos/${id}`);
   }
+
+  reordenar(orden: { id: number; orden: number }[]): Observable<any> {
+    return this.http.post(`${this.base}/api/articulos/reordenar`, { orden });
+  }
 }
