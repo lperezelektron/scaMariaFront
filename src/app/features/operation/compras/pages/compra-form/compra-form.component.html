@@ -13,26 +13,14 @@
           <button cButton color="secondary" variant="outline" (click)="back()">Volver</button>
 
           <ng-container *ngIf="id && !isCancelada()">
-            <button
-              cButton
-              color="danger"
-              variant="outline"
-              *hasPermission="'compras.ver'"
-              [disabled]="saving()"
-              (click)="cancelar()"
-            >
+            <button cButton color="danger" variant="outline" *hasPermission="'compras.cancelar'" [disabled]="saving()"
+              (click)="cancelar()">
               Cancelar
             </button>
           </ng-container>
 
           <ng-container *ngIf="!id">
-            <button
-              cButton
-              color="primary"
-              *hasPermission="'compras.crear'"
-              [disabled]="saving()"
-              (click)="save()"
-            >
+            <button cButton color="primary" *hasPermission="'compras.crear'" [disabled]="saving()" (click)="save()">
               <c-spinner size="sm" *ngIf="saving()"></c-spinner>
               Guardar
             </button>
@@ -128,14 +116,7 @@
             <!-- Detalles -->
             <div class="d-flex align-items-center justify-content-between mb-2">
               <div class="fw-semibold">Detalles</div>
-              <button
-                cButton
-                color="secondary"
-                variant="outline"
-                type="button"
-                *ngIf="!id"
-                (click)="addRow()"
-              >
+              <button cButton color="secondary" variant="outline" type="button" *ngIf="!id" (click)="addRow()">
                 Agregar renglón
               </button>
             </div>
@@ -171,13 +152,8 @@
                     </td>
 
                     <td>
-                      <input
-                        class="form-control"
-                        type="text"
-                        formControlName="variedad"
-                        [readonly]="!!id"
-                        placeholder="Ej: Chica, Mediana, Grande"
-                      />
+                      <input class="form-control" type="text" formControlName="variedad" [readonly]="!!id"
+                        placeholder="Ej: Chica, Mediana, Grande" />
                       <div class="text-danger small" *ngIf="g.get('variedad')?.touched && g.get('variedad')?.invalid">
                         <span *ngIf="g.get('variedad')?.errors?.['required']">La variedad es requerida.</span>
                         <span *ngIf="g.get('variedad')?.errors?.['pattern']">Solo texto (sin números).</span>
@@ -186,81 +162,38 @@
                     </td>
 
                     <td>
-                      <input
-                        class="form-control text-end"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        formControlName="cantidad"
-                        [readonly]="!!id"
-                      />
+                      <input class="form-control text-end" type="number" step="0.01" min="0" formControlName="cantidad"
+                        [readonly]="!!id" />
                     </td>
 
                     <td>
-                      <input
-                        class="form-control text-end"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        formControlName="empaque"
-                        [readonly]="!!id"
-                      />
+                      <input class="form-control text-end" type="number" step="0.01" min="0" formControlName="empaque"
+                        [readonly]="!!id" />
                     </td>
 
                     <td>
-                      <input
-                        class="form-control text-end"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        formControlName="costo"
-                        [readonly]="!!id"
-                      />
+                      <input class="form-control text-end" type="number" step="0.01" min="0" formControlName="costo"
+                        [readonly]="!!id" />
                     </td>
 
                     <td>
-                      <input
-                        class="form-control text-end"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        formControlName="impuestos"
-                        [readonly]="!!id"
-                      />
+                      <input class="form-control text-end" type="number" step="0.01" min="0" formControlName="impuestos"
+                        [readonly]="!!id" />
                     </td>
 
                     <td>
-                      <input
-                        class="form-control text-end"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        formControlName="precio"
-                        [readonly]="!!id"
-                      />
+                      <input class="form-control text-end" type="number" step="0.01" min="0" formControlName="precio"
+                        [readonly]="!!id" />
                     </td>
 
                     <td>
-                      <input
-                        class="form-control text-end"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        formControlName="precio_min"
-                        [readonly]="!!id"
-                      />
+                      <input class="form-control text-end" type="number" step="0.01" min="0"
+                        formControlName="precio_min" [readonly]="!!id" />
                     </td>
 
                     <td class="text-end">
-                      <button
-                        cButton
-                        color="danger"
-                        variant="outline"
-                        size="sm"
-                        type="button"
-                        *ngIf="!id"
-                        (click)="removeRow(i)"
-                      >
+                      <button cButton color="danger" variant="outline" size="sm" type="button" *ngIf="!id"
+                        (click)="removeRow(i)">
                         ✕
                       </button>
                     </td>
