@@ -13,6 +13,8 @@ export interface VentaStorePayload {
     almacen_id: number;
     f_pago_id: number;
 
+    empleado_id?: number | null;
+
     credito?: boolean;
     dias_credito?: number;
 
