@@ -2,7 +2,7 @@
 
   <div class="crud-header">
     <div class="crud-title">
-      <h2>Artículos</h2>
+      <h2>Empleados</h2>
       <small>{{ total() }} resultados</small>
     </div>
 
@@ -24,19 +24,10 @@
               [disabled]="!selectedId()" *hasPermission="'catalogos.eliminar'">
         Eliminar
       </button>
-
-      <button type="button" class="btn btn-outline-secondary" (click)="moveUp()"
-              [disabled]="!canMoveUp() || reordering()" *hasPermission="'catalogos.editar'">
-        ↑ Subir
-      </button>
-      <button type="button" class="btn btn-outline-secondary" (click)="moveDown()"
-              [disabled]="!canMoveDown() || reordering()" *hasPermission="'catalogos.editar'">
-        ↓ Bajar
-      </button>
     </div>
   </div>
 
-  <!-- Banner (reemplaza alert) -->
+  <!-- Banner -->
   <div *ngIf="banner() as b" class="alert"
        [class.alert-success]="b.type === 'success'"
        [class.alert-danger]="b.type === 'danger'"
@@ -48,7 +39,7 @@
   <div class="crud-toolbar">
     <input type="text"
       class="form-control crud-search"
-      placeholder="Buscar (nombre o nombre corto)..."
+      placeholder="Buscar por nombre..."
       [value]="search()"
       (input)="onSearch($any($event.target).value)"
     />
@@ -57,11 +48,6 @@
       <option value="all">Todos</option>
       <option value="true">Activos</option>
       <option value="false">Inactivos</option>
-    </select>
-
-    <select class="form-select" [value]="categoriaId() ?? ''" (change)="onCategoria($any($event.target).value)">
-      <option value="">Todas las categorías</option>
-      <option *ngFor="let c of categorias()" [value]="c.id">{{ c.descripcion }}</option>
     </select>
 
     <select class="form-select" [value]="pageSize()" (change)="onPageSize($any($event.target).value)">
@@ -100,17 +86,14 @@
     ></ag-grid-angular>
   </div>
 
-  <!-- Modal eliminar (CoreUI) -->
+  <!-- Modal eliminar -->
   <c-modal [visible]="deleteModalVisible()" (visibleChange)="deleteModalVisible.set($event)">
     <c-modal-header>
       <h5 class="modal-title">Confirmar eliminación</h5>
     </c-modal-header>
 
     <c-modal-body>
-      ¿Seguro que deseas eliminar el artículo seleccionado?
-      <div class="text-muted mt-2" style="font-size: 0.9rem;">
-        Nota: si tiene movimientos, el backend lo desactivará.
-      </div>
+      ¿Seguro que deseas eliminar el empleado seleccionado?
     </c-modal-body>
 
     <c-modal-footer>

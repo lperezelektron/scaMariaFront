@@ -409,6 +409,18 @@
       <div class="confirm-sub" *ngIf="!printerSvc.printerName()">
         No hay impresora seleccionada. Se pedirá que elijas una.
       </div>
+
+      <div class="print-copies-group">
+        <span class="print-copies-label">Copias</span>
+        <div class="print-copies-options">
+          <label class="print-copy-option" *ngFor="let n of [0, 1, 2]">
+            <input type="radio" name="printCopies" [value]="n"
+                   [checked]="printCopies() === n"
+                   (change)="printCopies.set(n)" />
+            {{ n }}
+          </label>
+        </div>
+      </div>
     </div>
 
     <div class="confirm-footer">

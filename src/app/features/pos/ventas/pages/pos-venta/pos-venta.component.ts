@@ -196,6 +196,8 @@ export class PosVentaComponent {
   printers           = signal<string[]>([]);
   loadingPrinters    = signal(false);
 
+  printCopies = signal<number>(Number(localStorage.getItem('pos_print_copies')) || 0);
+
   confirmOpen = signal(false);
   confirmTitle = signal('Confirmar acción');
   confirmMessage = signal('');
@@ -844,7 +846,7 @@ export class PosVentaComponent {
   }
 
   // ====== Impresión ======
-  printTicket(ventaId: number | null = this.lastVentaId()) {
+  printTicket(ventaId: number | null = this.lastVentaId(), copies = 0) {
     if (!ventaId) return;
 
     // Si no hay impresora guardada, abrir el selector primero
@@ -858,7 +860,10 @@ export class PosVentaComponent {
     this.ventasSvc.getTicket(ventaId, 48).subscribe({
       next: async (data) => {
         try {
-          await this.printerSvc.print(data);
+          const total = 1 + copies;
+          for (let i = 0; i < total; i++) {
+            await this.printerSvc.print(data);
+          }
           this.banner.set({ type: 'success', text: 'Ticket enviado a la impresora.' });
         } catch (err: any) {
           if (err?.message === 'NO_PRINTER') {
@@ -916,8 +921,10 @@ export class PosVentaComponent {
   }
 
   confirmPrint() {
+    const copies = this.printCopies();
+    localStorage.setItem('pos_print_copies', String(copies));
     this.showPrintDialog.set(false);
-    this.printTicket();
+    this.printTicket(this.lastVentaId(), copies);
   }
 
   declinePrint() {

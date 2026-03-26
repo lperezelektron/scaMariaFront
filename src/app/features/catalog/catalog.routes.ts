@@ -35,6 +35,12 @@ export const routes: Routes = [
           import('./formas-pago/formas-pago.routes').then((m) => m.routes),
       },
       {
+        path: 'empleados',
+        data: { title: 'Empleados' },
+        loadChildren: () =>
+          import('./empleados/empleados.routes').then((m) => m.routes),
+      },
+      {
         path: '',
         redirectTo: 'categorias',
         pathMatch: 'full',

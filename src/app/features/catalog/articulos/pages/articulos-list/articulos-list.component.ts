@@ -89,6 +89,7 @@ export class ArticulosListComponent {
   private search$ = new Subject<string>();
   deleteModalVisible = signal(false);
   deleting = signal(false);
+  reordering = signal(false);
 
   // mensaje tipo banner (reemplaza alert)
   banner = signal<{ type: 'success' | 'danger' | 'info'; text: string } | null>(
@@ -269,6 +270,56 @@ export class ArticulosListComponent {
     if (!id) return;
     this.router.navigate(['/catalog/articulos', id, 'editar'], {
       queryParams: this.route.snapshot.queryParams,
+    });
+  }
+
+  private sortedRows(): Articulo[] {
+    return [...this.rows()].sort((a, b) => (a.orden ?? 99999) - (b.orden ?? 99999));
+  }
+
+  canMoveUp(): boolean {
+    if (!this.selectedId()) return false;
+    const sorted = this.sortedRows();
+    const idx = sorted.findIndex((a) => a.id === this.selectedId());
+    return idx > 0;
+  }
+
+  canMoveDown(): boolean {
+    if (!this.selectedId()) return false;
+    const sorted = this.sortedRows();
+    const idx = sorted.findIndex((a) => a.id === this.selectedId());
+    return idx >= 0 && idx < sorted.length - 1;
+  }
+
+  moveUp() {
+    const sorted = this.sortedRows();
+    const idx = sorted.findIndex((a) => a.id === this.selectedId());
+    if (idx <= 0) return;
+    this.swapOrden(sorted[idx], sorted[idx - 1]);
+  }
+
+  moveDown() {
+    const sorted = this.sortedRows();
+    const idx = sorted.findIndex((a) => a.id === this.selectedId());
+    if (idx < 0 || idx >= sorted.length - 1) return;
+    this.swapOrden(sorted[idx], sorted[idx + 1]);
+  }
+
+  private swapOrden(a: Articulo, b: Articulo) {
+    this.reordering.set(true);
+    const payload = [
+      { id: a.id, orden: b.orden ?? 0 },
+      { id: b.id, orden: a.orden ?? 0 },
+    ];
+    this.articulosSvc.reordenar(payload).subscribe({
+      next: () => {
+        this.reordering.set(false);
+        this.reload();
+      },
+      error: () => {
+        this.reordering.set(false);
+        this.banner.set({ type: 'danger', text: 'No se pudo reordenar.' });
+      },
     });
   }
 

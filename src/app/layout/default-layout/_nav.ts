@@ -82,6 +82,12 @@ export const navItems: INavDataPerm[] = [
         icon: 'nav-icon-bullet',
         permissions: ['catalogos.ver'],
       },
+      {
+        name: 'Empleados',
+        url: '/catalog/empleados',
+        icon: 'nav-icon-bullet',
+        permissions: ['catalogos.ver'],
+      },
     ],
   },
 
