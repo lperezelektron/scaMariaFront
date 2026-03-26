@@ -409,7 +409,6 @@ export class PosVentaComponent {
   }
 
   imgSrc(a: any): string {
-    console.log(a.imagen_url);
     return `http://${a.imagen_url}`
   }
 
