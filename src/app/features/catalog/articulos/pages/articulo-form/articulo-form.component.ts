@@ -38,6 +38,7 @@ export class ArticuloFormComponent {
     unidad: ['', [Validators.required, Validators.maxLength(5)]],
     categoria_id: [null as number | null, [Validators.required]],
     activo: [true],
+    orden: [null as number | null],
   });
 
   constructor(
@@ -79,6 +80,7 @@ export class ArticuloFormComponent {
           unidad: a?.unidad ?? '',
           categoria_id: a?.categoria_id ?? null,
           activo: !!a?.activo,
+          orden: a?.orden ?? null,
         });
         this.imagenActual.set(a?.imagen ?? null);
         this.fieldErrors.set({});
@@ -139,6 +141,7 @@ export class ArticuloFormComponent {
     fd.append('unidad', raw.unidad ?? '');
     fd.append('categoria_id', String(Number(raw.categoria_id)));
     fd.append('activo', raw.activo ? '1' : '0');
+    if (raw.orden !== null && raw.orden !== undefined) fd.append('orden', String(raw.orden));
     if (this.imagenFile) fd.append('imagen', this.imagenFile);
 
     const req =

@@ -68,6 +68,7 @@ export class ArticulosListComponent {
 
   colDefs: ColDef<Articulo>[] = [
     { headerName: 'ID', field: 'id', width: 90 },
+    { headerName: 'Orden', field: 'orden', width: 100 },
     { headerName: 'Nombre', field: 'nombre', flex: 1, minWidth: 240 },
     { headerName: 'Nombre corto', field: 'nombre_corto', minWidth: 170 },
     { headerName: 'Unidad', field: 'unidad', width: 110 },

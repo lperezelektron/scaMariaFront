@@ -40,6 +40,12 @@
         <div class="invalid-hint" *ngIf="backendError('unidad')">{{ backendError('unidad') }}</div>
       </div>
 
+      <div class="col-12 col-md-2">
+        <label class="form-label">Orden</label>
+        <input type="number" class="form-control" formControlName="orden" min="0" [class.is-invalid]="isInvalid('orden')" (input)="clearBackendError('orden')" />
+        <div class="invalid-hint" *ngIf="backendError('orden')">{{ backendError('orden') }}</div>
+      </div>
+
       <div class="col-12 col-md-6">
         <label class="form-label">Categoría</label>
         <select class="form-select" formControlName="categoria_id" [class.is-invalid]="isInvalid('categoria_id')" (input)="clearBackendError('categoria_id')">
