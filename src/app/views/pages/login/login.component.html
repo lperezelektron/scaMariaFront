@@ -10,6 +10,10 @@
                 <h1>El Limonero</h1>
                 <p class="text-body-secondary mb-4">Accede con tu usuario</p>
 
+                <c-alert color="warning" class="mb-3" *ngIf="sessionExpired">
+                  Tu sesión ha expirado. Por favor inicia sesión nuevamente.
+                </c-alert>
+
                 <c-alert color="danger" class="mb-3" *ngIf="errorMsg">
                   {{ errorMsg }}
                 </c-alert>
@@ -18,36 +22,22 @@
                   <span cInputGroupText>
                     <svg cIcon name="cilUser"></svg>
                   </span>
-                  <input
-                    cFormControl
-                    formControlName="email"
-                    placeholder="Correo"
-                    autocomplete="username"
-                    inputmode="email"
-                  />
+                  <input cFormControl formControlName="email" placeholder="Correo" autocomplete="username"
+                    inputmode="email" />
                 </c-input-group>
 
                 <c-input-group class="mb-4">
                   <span cInputGroupText>
                     <svg cIcon name="cilLockLocked"></svg>
                   </span>
-                  <input
-                    cFormControl
-                    formControlName="password"
-                    placeholder="Contraseña"
-                    type="password"
-                    autocomplete="current-password"
-                  />
+                  <input cFormControl formControlName="password" placeholder="Contraseña" type="password"
+                    autocomplete="current-password" />
                 </c-input-group>
 
                 <c-row class="align-items-center">
                   <c-col xs="6">
                     <button cButton class="px-4" color="primary" type="submit" [disabled]="loading">
-                      <c-spinner
-                        *ngIf="loading"
-                        size="sm"
-                        class="me-2"
-                      ></c-spinner>
+                      <c-spinner *ngIf="loading" size="sm" class="me-2"></c-spinner>
                       Entrar
                     </button>
                   </c-col>

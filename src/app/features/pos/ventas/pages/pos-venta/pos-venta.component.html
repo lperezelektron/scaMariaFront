@@ -19,10 +19,8 @@
 
     <div class="pos-right">
       <!-- Impresora activa -->
-      <button type="button" class="printer-status-btn"
-        [class.printer-ok]="printerSvc.printerName()"
-        [class.printer-none]="!printerSvc.printerName()"
-        (click)="openPrinterPicker()"
+      <button type="button" class="printer-status-btn" [class.printer-ok]="printerSvc.printerName()"
+        [class.printer-none]="!printerSvc.printerName()" (click)="openPrinterPicker()"
         title="{{ printerSvc.printerName() ? 'Impresora: ' + printerSvc.printerName() : 'Sin impresora' }}">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="6 9 6 2 18 2 18 9"></polyline>
@@ -43,10 +41,8 @@
     </div>
   </header>
 
-  <div *ngIf="banner() as b" class="alert mb-2"
-    [class.alert-success]="b.type === 'success'"
-    [class.alert-danger]="b.type === 'danger'"
-    [class.alert-info]="b.type === 'info'">
+  <div *ngIf="banner() as b" class="alert mb-2" [class.alert-success]="b.type === 'success'"
+    [class.alert-danger]="b.type === 'danger'" [class.alert-info]="b.type === 'info'">
     {{ b.text }}
   </div>
 
@@ -93,7 +89,7 @@
                   <img [src]="imgSrc(a)" [alt]="a.nombre" loading="lazy" decoding="async" />
                 </div>
 
-                <!-- Nombre siempre visible -->
+                <!-- Nombre: solo si no hay imagen, o siempre debajo -->
                 <div class="info">
                   <div class="name">{{ a.nombre }}</div>
                 </div>
@@ -235,19 +231,18 @@
         <input class="form-control form-control-sm" type="date" formControlName="fecha" autocomplete="off" />
       </div>
 
-      <div class="checkout-section">
+      <div class="checkout-section" style="position:relative">
         <label class="checkout-label">Cliente</label>
-        <input class="form-control form-control-sm" [value]="clienteSearch()"
-          (input)="onClienteSearch($any($event.target).value)" placeholder="Nombre o teléfono..." autocomplete="off"
-          spellcheck="false" />
-
-        <div class="suggest" *ngIf="clientesFound().length">
-          <button type="button" class="suggest-item" *ngFor="let c of clientesFound()" (click)="selectCliente(c)">
-            <div class="s-title">{{ c.nombre }}</div>
-            <div class="s-sub text-muted">{{ c.telefono || 'Sin teléfono' }}</div>
-          </button>
-        </div>
-
+        <input class="form-control form-control-sm" [value]="clienteNombreCtrl.value"
+          (input)="onClienteInput($any($event.target).value)" (focus)="onClienteFocus()" (blur)="onClienteBlur()"
+          placeholder="Buscar cliente..." autocomplete="off" spellcheck="false" />
+        <ul *ngIf="clienteDropdownOpen() && clientesFiltrados().length" class="list-group"
+          style="position:absolute;z-index:9999;width:100%;max-height:200px;overflow-y:auto;top:100%;left:0">
+          <li *ngFor="let c of clientesFiltrados()" class="list-group-item list-group-item-action py-1 px-2"
+            style="cursor:pointer;font-size:.85rem" (mousedown)="onClienteSelect(c)">
+            {{ c.nombre }}
+          </li>
+        </ul>
         <div class="text-danger small mt-1" *ngIf="backendError('cliente_id')">
           {{ backendError('cliente_id') }}
         </div>
@@ -422,9 +417,8 @@
         <span class="print-copies-label">Copias</span>
         <div class="print-copies-options">
           <label class="print-copy-option" *ngFor="let n of [0, 1, 2]">
-            <input type="radio" name="printCopies" [value]="n"
-                   [checked]="printCopies() === n"
-                   (change)="printCopies.set(n)" />
+            <input type="radio" name="printCopies" [value]="n" [checked]="printCopies() === n"
+              (change)="printCopies.set(n)" />
             {{ n }}
           </label>
         </div>
@@ -435,8 +429,7 @@
       <button type="button" class="btn btn-secondary btn-lg" (click)="declinePrint()">
         No, gracias
       </button>
-      <button type="button" class="btn btn-success btn-lg" [disabled]="printing()"
-        (click)="confirmPrint()">
+      <button type="button" class="btn btn-success btn-lg" [disabled]="printing()" (click)="confirmPrint()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="6 9 6 2 18 2 18 9"></polyline>
           <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
@@ -470,18 +463,16 @@
       </div>
 
       <div class="printer-list" *ngIf="!loadingPrinters() && printers().length > 0">
-        <button type="button" class="printer-item"
-          *ngFor="let p of printers()"
-          [class.active]="p === printerSvc.printerName()"
-          (click)="selectPrinter(p)">
+        <button type="button" class="printer-item" *ngFor="let p of printers()"
+          [class.active]="p === printerSvc.printerName()" (click)="selectPrinter(p)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="6 9 6 2 18 2 18 9"></polyline>
             <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
             <rect x="6" y="14" width="12" height="8"></rect>
           </svg>
           {{ p }}
-          <svg *ngIf="p === printerSvc.printerName()" class="check-icon" width="16" height="16"
-            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <svg *ngIf="p === printerSvc.printerName()" class="check-icon" width="16" height="16" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2.5">
             <polyline points="20 6 9 17 4 12"></polyline>
           </svg>
         </button>

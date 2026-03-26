@@ -64,14 +64,13 @@ export const routes: Routes = [
       },
       {
         path: 'settings',
-        // temporal: cuando tengas settings.*, lo ajustamos a esos permisos
-        canMatch: [permissionMatch('catalogos.ver')],
+        canMatch: [permissionMatch('settings.ver')],
         loadChildren: () =>
           import('./features/settings/settings.routes').then((m) => m.routes),
       },
       {
         path: 'reporte',
-        canMatch: [permissionMatch('caja.ver')],
+        canMatch: [permissionMatch('reportes.ver')],
         loadChildren: () =>
           import('./features/reporte/reporte.routes').then((m) => m.routes),
       },

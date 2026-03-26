@@ -4,7 +4,7 @@ import { permissionMatch } from '../../../core/auth/permission.match';
 export const routes: Routes = [
   {
     path: '',
-    canMatch: [permissionMatch('ventas.ver')],
+    canMatch: [permissionMatch('cxc.ver')],
     data: { title: 'Cuentas por Cobrar' },
     loadComponent: () =>
       import('./pages/cxc-list/cxc-list.component').then((m) => m.CxcListComponent),

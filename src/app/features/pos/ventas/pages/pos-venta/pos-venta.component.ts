@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, computed, inject, signal, ChangeDetectionStrategy, HostListener, effect } from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal, HostListener, effect } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { debounceTime, distinctUntilChanged, Subject, interval } from 'rxjs';
@@ -16,6 +16,7 @@ import { LoteDisponible, VentaDetallePayload, VentaStorePayload } from '../../da
 import { VentasService } from '../../data/ventas.service';
 import { PrinterService } from '../../../../../shared/services/printer.service';
 import { getTodayString } from '../../../../../shared/utils/date.utils';
+import { environment } from 'src/enviroments/environment';
 
 
 type FieldErrors = Record<string, string[]>;
@@ -38,7 +39,6 @@ type CartLine = {
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './pos-venta.component.html',
   styleUrl: './pos-venta.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PosVentaComponent {
   private fb = inject(FormBuilder);
@@ -71,16 +71,25 @@ export class PosVentaComponent {
   almacenes = signal<any[]>([]);
   formasPago = signal<any[]>([]);
   empleados = signal<any[]>([]);
+  clientes = signal<any[]>([]);
   categorias = signal<{ id: number; descripcion: string }[]>([]);
 
   // Selecciones (solo UI)
   selectedArticulo = signal<any | null>(null);
 
   // Búsqueda clientes
-  clienteSearch = signal('');
   clientesFound = signal<any[]>([]);
-  private clienteSearch$ = new Subject<string>();
-  private skipClienteSearch = false; // Flag para evitar búsqueda al seleccionar
+  clienteNombreCtrl = this.fb.control('');
+  private clienteQuery = signal('');
+  clienteDropdownOpen = signal(false);
+
+  clientesFiltrados = computed(() => {
+    const q = this.clienteQuery().toLowerCase().trim();
+    if (!q) return this.clientes().slice(0, 20);
+    return this.clientes()
+      .filter(c => c.nombre?.toLowerCase().includes(q))
+      .slice(0, 20);
+  });
 
   // Catálogo visual artículos (infinite)
   articuloSearch = signal('');
@@ -156,9 +165,8 @@ export class PosVentaComponent {
   selectedClienteName = computed(() => {
     const id = this.form.value.cliente_id;
     if (!id) return '—';
-    const hit = this.clientesFound().find(x => x.id === id);
-    // si ya seleccionaste y limpiamos lista, al menos mostramos el texto escrito
-    return hit?.nombre ?? (this.clienteSearch()?.trim() || '—');
+    const hit = this.clientes().find(x => x.id === id);
+    return hit?.nombre ?? '—';
   });
 
   canSubmit = computed(() => {
@@ -193,12 +201,12 @@ export class PosVentaComponent {
   });
 
   // Impresión
-  lastVentaId        = signal<number | null>(null);
-  printing           = signal(false);
-  showPrintDialog    = signal(false);
-  showPrinterPicker  = signal(false);
-  printers           = signal<string[]>([]);
-  loadingPrinters    = signal(false);
+  lastVentaId = signal<number | null>(null);
+  printing = signal(false);
+  showPrintDialog = signal(false);
+  showPrinterPicker = signal(false);
+  printers = signal<string[]>([]);
+  loadingPrinters = signal(false);
 
   printCopies = signal<number>(Number(localStorage.getItem('pos_print_copies')) || 0);
 
@@ -262,9 +270,9 @@ export class PosVentaComponent {
       });
 
     // búsqueda live clientes
-    this.clienteSearch$
-      .pipe(debounceTime(150), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
-      .subscribe((q) => this.searchClientes(q));
+    this.clienteNombreCtrl.valueChanges
+      .pipe(debounceTime(100), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .subscribe(q => this.clienteQuery.set(q ?? ''));
 
     // búsqueda live artículos
     this.gridSearch$
@@ -284,11 +292,16 @@ export class PosVentaComponent {
 
     // carga inicial grid
     this.resetGridAndLoad();
+    this.setDefaultsVenta();
   }
 
   // ====== Inicial ======
   private today(): string {
     return getTodayString();
+  }
+
+  private setDefaultsVenta() {
+    this.form.patchValue({ f_pago_id: 1, cliente_id: environment.clienteMostrador });
   }
 
   private loadCatalogos() {
@@ -308,13 +321,27 @@ export class PosVentaComponent {
     // formas pago
     this.formasPagoSvc.list().subscribe({
       next: (rows) => this.formasPago.set(rows ?? []),
-      error: () => {}
+      error: () => { }
     });
 
     // empleados
     this.empleadosSvc.list().subscribe({
       next: (rows) => this.empleados.set((rows ?? []).filter((e: any) => e.activo)),
-      error: () => {}
+      error: () => { }
+    });
+
+    // clientes
+    this.clientesSvc.list({ activo: true, per_page: 500 }).subscribe({
+      next: (res: any) => {
+        const data = Array.isArray(res) ? res : (res?.data ?? []);
+        this.clientes.set(data);
+        // Setear nombre del cliente por defecto una vez que la lista esté disponible
+        const clientePorDefecto = data.find((c: any) => c.id === this.form.value.cliente_id);
+        if (clientePorDefecto) {
+          this.clienteNombreCtrl.setValue(clientePorDefecto.nombre, { emitEvent: false });
+        }
+      },
+      error: () => { }
     });
 
     // categorías (con manejo de errores mejorado)
@@ -480,44 +507,43 @@ export class PosVentaComponent {
   }
 
   // ====== Clientes ======
-  onClienteSearch(v: string) {
-    // Si estamos saltando la búsqueda (porque se seleccionó un cliente), resetear flag y salir
-    if (this.skipClienteSearch) {
-      this.skipClienteSearch = false;
-      return;
-    }
-
-    this.clienteSearch.set(v);
-    this.clienteSearch$.next(v);
+  onClienteInput(valor: string) {
+    this.clienteNombreCtrl.setValue(valor, { emitEvent: false });
+    this.clienteQuery.set(valor);
+    this.clienteDropdownOpen.set(true);
+    // Si borra el texto, limpiar selección
+    if (!valor.trim()) this.form.patchValue({ cliente_id: null });
   }
 
-  private searchClientes(q: string) {
-    const s = (q ?? '').trim();
-    if (s.length < 2) {
-      this.clientesFound.set([]);
-      return;
-    }
+  onClienteFocus() {
+    this.clienteDropdownOpen.set(true);
+  }
 
-    this.clientesSvc.list({ search: s, per_page: 8, page: 1, activo: true }).subscribe({
-      next: (res: any) => {
-        const data = Array.isArray(res) ? res : (res?.data ?? []);
-        this.clientesFound.set(data);
-      },
-      error: () => {
-        // silencioso, no mostrar error en búsqueda
-        this.clientesFound.set([]);
-      }
-    });
+  onClienteBlur() {
+    // Delay para permitir que mousedown del item se ejecute primero
+    setTimeout(() => this.clienteDropdownOpen.set(false), 200);
+  }
+
+  onClienteSelect(c: any) {
+    this.clienteNombreCtrl.setValue(c.nombre, { emitEvent: false });
+    this.clienteQuery.set('');
+    this.clienteDropdownOpen.set(false);
+    this.form.patchValue({ cliente_id: c.id });
+    this.clearBackendError('cliente_id');
+  }
+
+  onClienteInputChange(nombre: string) {
+    const match = this.clientes().find(c => c.nombre === nombre);
+    if (match) {
+      this.form.patchValue({ cliente_id: match.id });
+      this.clearBackendError('cliente_id');
+    } else {
+      this.form.patchValue({ cliente_id: null });
+    }
   }
 
   selectCliente(c: any) {
-    // Activar flag para evitar búsqueda al actualizar clienteSearch
-    this.skipClienteSearch = true;
-
-    this.form.patchValue({ cliente_id: c.id });
-    this.clienteSearch.set(c.nombre ?? '');
-    this.clientesFound.set([]);
-    this.clearBackendError('cliente_id');
+    this.onClienteSelect(c);
   }
 
   // ====== Ticket ======
@@ -828,8 +854,10 @@ export class PosVentaComponent {
         this.lotes.set([]);
         this.selectedArticulo.set(null);
 
-        this.clienteSearch.set('');
         this.clientesFound.set([]);
+        this.clienteNombreCtrl.setValue('', { emitEvent: false });
+        this.clienteQuery.set('');
+        this.clienteDropdownOpen.set(false);
 
         this.form.reset({
           fecha: this.today(),
