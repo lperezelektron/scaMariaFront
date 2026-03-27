@@ -147,13 +147,8 @@
                   <div class="control-group qty-group">
                     <label class="control-label">Cantidad</label>
                     <div class="qty-control">
-                      <button type="button" class="qty-btn" (click)="bumpQty(x.key, -1)"
-                        aria-label="Disminuir cantidad">−</button>
-                      <input class="qty-input" type="text" inputmode="decimal" autocomplete="off" spellcheck="false"
-                        [value]="cantidadView(x.key, x.cantidad)" (input)="setQty(x.key, $any($event.target).value)"
-                        (blur)="commitQty(x.key)" />
-                      <button type="button" class="qty-btn" (click)="bumpQty(x.key, +1)"
-                        aria-label="Aumentar cantidad">+</button>
+                      <input class="qty-input" type="text" inputmode="none" autocomplete="off" spellcheck="false"
+                        readonly [value]="cantidadView(x.key, x.cantidad)" (focus)="openKb(x.key, x.cantidad)" />
                     </div>
                     <div class="stock-info">Disponible: {{ x.lote.existencia }} {{ x.lote.articulo?.unidad }}</div>
                   </div>
@@ -231,18 +226,43 @@
         <input class="form-control form-control-sm" type="date" formControlName="fecha" autocomplete="off" />
       </div>
 
-      <div class="checkout-section" style="position:relative">
+      <div class="checkout-section cliente-autocomplete">
         <label class="checkout-label">Cliente</label>
-        <input class="form-control form-control-sm" [value]="clienteNombreCtrl.value"
-          (input)="onClienteInput($any($event.target).value)" (focus)="onClienteFocus()" (blur)="onClienteBlur()"
-          placeholder="Buscar cliente..." autocomplete="off" spellcheck="false" />
-        <ul *ngIf="clienteDropdownOpen() && clientesFiltrados().length" class="list-group"
-          style="position:absolute;z-index:9999;width:100%;max-height:200px;overflow-y:auto;top:100%;left:0">
-          <li *ngFor="let c of clientesFiltrados()" class="list-group-item list-group-item-action py-1 px-2"
-            style="cursor:pointer;font-size:.85rem" (mousedown)="onClienteSelect(c)">
-            {{ c.nombre }}
+        <div class="cliente-input-wrap" [class.is-open]="clienteDropdownOpen() && clientesFiltrados().length">
+          <span class="cliente-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="12" cy="8" r="4" />
+              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+            </svg>
+          </span>
+          <input class="form-control form-control-sm cliente-input" [value]="clienteNombreCtrl.value"
+            (input)="onClienteInput($any($event.target).value)" (focus)="onClienteFocus()" (blur)="onClienteBlur()"
+            placeholder="Buscar cliente..." autocomplete="off" spellcheck="false" />
+          <button *ngIf="form.value.cliente_id" type="button" class="cliente-clear" (mousedown)="onClienteClear()"
+            title="Quitar cliente">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+          <span class="cliente-chevron" [class.open]="clienteDropdownOpen()" *ngIf="!form.value.cliente_id">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </span>
+        </div>
+
+        <ul *ngIf="clienteDropdownOpen() && clientesFiltrados().length" class="cliente-dropdown">
+          <li *ngFor="let c of clientesFiltrados()" class="cliente-option" (mousedown)="onClienteSelect(c)">
+            <span class="cliente-option-icon">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="8" r="4" />
+                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+              </svg>
+            </span>
+            <span class="cliente-option-nombre">{{ c.nombre }}</span>
           </li>
         </ul>
+
         <div class="text-danger small mt-1" *ngIf="backendError('cliente_id')">
           {{ backendError('cliente_id') }}
         </div>
@@ -485,3 +505,8 @@
       </button>
     </div>
   </div>
+
+  <!-- Teclado numérico -->
+  <app-numeric-keyboard *ngIf="kbActiveKey()" [value]="kbValue()" (valueChange)="onKbChange($event)"
+    (confirm)="onKbConfirm($event)" (cancel)="onKbCancel()">
+  </app-numeric-keyboard>

@@ -16,7 +16,8 @@ import { LoteDisponible, VentaDetallePayload, VentaStorePayload } from '../../da
 import { VentasService } from '../../data/ventas.service';
 import { PrinterService } from '../../../../../shared/services/printer.service';
 import { getTodayString } from '../../../../../shared/utils/date.utils';
-import { environment } from 'src/enviroments/environment';
+import { NumericKeyboardComponent } from '../../../../../shared/components/numeric-keyboard/numeric-keyboard.component';
+import { environment } from '../../../../../../enviroments/environment';
 
 
 type FieldErrors = Record<string, string[]>;
@@ -36,7 +37,7 @@ type CartLine = {
 @Component({
   selector: 'app-pos-venta',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, NumericKeyboardComponent],
   templateUrl: './pos-venta.component.html',
   styleUrl: './pos-venta.component.scss',
 })
@@ -110,6 +111,10 @@ export class PosVentaComponent {
 
   // Ticket
   cart = signal<CartLine[]>([]);
+
+  // Teclado numérico
+  kbActiveKey = signal<string | null>(null);   // key del CartLine activo
+  kbValue = signal<string>('');            // valor en edición
 
   // Form
   form = this.fb.group({
@@ -520,8 +525,15 @@ export class PosVentaComponent {
   }
 
   onClienteBlur() {
-    // Delay para permitir que mousedown del item se ejecute primero
     setTimeout(() => this.clienteDropdownOpen.set(false), 200);
+  }
+
+  onClienteClear() {
+    this.clienteNombreCtrl.setValue('', { emitEvent: false });
+    this.clienteQuery.set('');
+    this.form.patchValue({ cliente_id: null });
+    this.clienteDropdownOpen.set(true);
+    this.clearBackendError('cliente_id');
   }
 
   onClienteSelect(c: any) {
@@ -544,6 +556,27 @@ export class PosVentaComponent {
 
   selectCliente(c: any) {
     this.onClienteSelect(c);
+  }
+
+  // ====== Teclado numérico ======
+  openKb(key: string, currentValue: number) {
+    this.kbActiveKey.set(key);
+    this.kbValue.set(String(currentValue));
+  }
+
+  onKbChange(val: string) {
+    this.kbValue.set(val);
+  }
+
+  onKbConfirm(val: string) {
+    const key = this.kbActiveKey();
+    if (key) this.setQty(key, val || '0');
+    if (key) this.commitQty(key);
+    this.kbActiveKey.set(null);
+  }
+
+  onKbCancel() {
+    this.kbActiveKey.set(null);
   }
 
   // ====== Ticket ======
