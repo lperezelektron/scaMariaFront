@@ -1,0 +1,106 @@
+.numkb-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1040;
+    background: rgba(0, 0, 0, .35);
+}
+
+.numkb-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1050;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, .25);
+    padding: 16px;
+    width: min(360px, 92vw);
+}
+
+.numkb-display {
+    background: #f4f6f8;
+    border-radius: 8px;
+    padding: 10px 16px;
+    margin-bottom: 12px;
+    text-align: right;
+}
+
+.numkb-value {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #1a1a2e;
+    letter-spacing: .05em;
+}
+
+.numkb-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.numkb-key {
+    background: #f0f2f5;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.5rem;
+    font-weight: 500;
+    padding: 16px 0;
+    cursor: pointer;
+    transition: background .1s;
+    color: #1a1a2e;
+
+    &:active {
+        background: #d0d4da;
+    }
+}
+
+.numkb-key-del {
+    background: #ffe5e5;
+    color: #c0392b;
+
+    &:active {
+        background: #ffc0c0;
+    }
+}
+
+.numkb-key-dot {
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+.numkb-actions {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 8px;
+}
+
+.numkb-btn-cancel {
+    background: #f0f2f5;
+    border: none;
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 1rem;
+    cursor: pointer;
+    color: #555;
+
+    &:active {
+        background: #d0d4da;
+    }
+}
+
+.numkb-btn-ok {
+    background: #2563eb;
+    border: none;
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #fff;
+    cursor: pointer;
+
+    &:active {
+        background: #1d4ed8;
+    }
+}

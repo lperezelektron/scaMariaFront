@@ -1,0 +1,19 @@
+<div class="numkb-overlay" (click)="onCancel()"></div>
+
+<div class="numkb-panel">
+    <div class="numkb-display">
+        <span class="numkb-value">{{ value || '0' }}</span>
+    </div>
+
+    <div class="numkb-grid">
+        <button *ngFor="let k of keys" type="button" class="numkb-key" [class.numkb-key-del]="k === '⌫'"
+            [class.numkb-key-dot]="k === '.'" (click)="press(k)">
+            {{ k }}
+        </button>
+    </div>
+
+    <div class="numkb-actions">
+        <button type="button" class="numkb-btn-cancel" (click)="onCancel()">Cancelar</button>
+        <button type="button" class="numkb-btn-ok" (click)="onConfirm()">OK</button>
+    </div>
+</div>
