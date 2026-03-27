@@ -651,9 +651,28 @@
   }
 }
 
+.ticket-col-headers {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding: 4px 16px 4px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f8fafc;
+}
+
+.ticket-col-headers span {
+  font-size: .67rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: #6b7280;
+}
+
+.col-h-price, .col-h-sub { text-align: right; }
+
 .item-controls {
   display: grid;
-  grid-template-columns: 180px 1fr 140px;
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px;
   align-items: end;
 }
@@ -806,16 +825,9 @@
 =========================== */
 
 /* Ajustes para pantallas medianas */
-@media (max-width: 1400px) {
-  .item-controls {
-    grid-template-columns: 160px 1fr 130px;
-    gap: 8px;
-  }
-}
-
 @media (max-width: 1200px) {
+  .ticket-col-headers,
   .item-controls {
-    grid-template-columns: 150px 1fr 120px;
     gap: 8px;
   }
 

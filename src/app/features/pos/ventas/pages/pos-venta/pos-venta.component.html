@@ -120,6 +120,12 @@
           </div>
         </div>
 
+        <div class="ticket-col-headers" *ngIf="cart().length">
+          <span class="col-h-qty">Cantidad</span>
+          <span class="col-h-price">P. Unitario</span>
+          <span class="col-h-sub">Subtotal</span>
+        </div>
+
         <div class="panel-body">
           <div class="ticket-section">
             <div *ngIf="cart().length; else emptyTicket" class="ticket">
@@ -130,8 +136,8 @@
                 <div class="item-header">
                   <div class="item-info">
                     <div class="item-name">
-                      <span *ngIf="x.lote.variedad" class="variedad-prefix">{{ x.lote.variedad }} -</span>
                       {{ x.lote.articulo?.nombre || ('Artículo #' + x.articulo_id) }}
+                      <span *ngIf="x.lote.variedad" class="variedad-prefix">- {{ x.lote.variedad }}</span>
                     </div>
                   </div>
                   <button type="button" class="btn-remove" (click)="removeLine(x.key)" title="Quitar"
@@ -145,21 +151,21 @@
                 <!-- Controles de cantidad y precio -->
                 <div class="item-controls">
                   <div class="control-group qty-group">
-                    <label class="control-label">Cantidad</label>
                     <div class="qty-control">
                       <input class="qty-input" type="text" inputmode="none" autocomplete="off" spellcheck="false"
                         readonly [value]="cantidadView(x.key, x.cantidad)" (focus)="openKb(x.key, x.cantidad)" />
                     </div>
-                    <div class="stock-info">Disponible: {{ x.lote.existencia }} {{ x.lote.articulo?.unidad }}</div>
+                    <!-- <div class="stock-info">Disp: {{ x.lote.existencia }} {{ x.lote.articulo?.unidad }}</div> -->
                   </div>
 
                   <div class="control-group price-group">
-                    <label class="control-label">Precio unitario</label>
-                    <div class="price-display">{{ money(x.precio) }}</div>
+                    <div class="qty-control">
+                      <input class="qty-input" type="text" inputmode="none" autocomplete="off" spellcheck="false"
+                        readonly [value]="precioView(x.key, x.precio)" (focus)="openKbPrice(x.key, x.precio)" />
+                    </div>
                   </div>
 
                   <div class="control-group sub-group">
-                    <label class="control-label">Subtotal</label>
                     <div class="subtotal-display">{{ money(x.cantidad * x.precio) }}</div>
                   </div>
                 </div>

@@ -115,6 +115,7 @@ export class PosVentaComponent {
   // Teclado numérico
   kbActiveKey = signal<string | null>(null);   // key del CartLine activo
   kbValue = signal<string>('');            // valor en edición
+  kbMode = signal<'qty' | 'price'>('qty');
 
   // Form
   form = this.fb.group({
@@ -560,8 +561,15 @@ export class PosVentaComponent {
 
   // ====== Teclado numérico ======
   openKb(key: string, currentValue: number) {
+    this.kbMode.set('qty');
     this.kbActiveKey.set(key);
     this.kbValue.set(String(currentValue));
+  }
+
+  openKbPrice(key: string, currentPrice: number) {
+    this.kbMode.set('price');
+    this.kbActiveKey.set(key);
+    this.kbValue.set(String(currentPrice));
   }
 
   onKbChange(val: string) {
@@ -570,8 +578,15 @@ export class PosVentaComponent {
 
   onKbConfirm(val: string) {
     const key = this.kbActiveKey();
-    if (key) this.setQty(key, val || '0');
-    if (key) this.commitQty(key);
+    if (key) {
+      if (this.kbMode() === 'price') {
+        this.setPrecio(key, val || '0');
+        this.commitPrecio(key);
+      } else {
+        this.setQty(key, val || '0');
+        this.commitQty(key);
+      }
+    }
     this.kbActiveKey.set(null);
   }
 
