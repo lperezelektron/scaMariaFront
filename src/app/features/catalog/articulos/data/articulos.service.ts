@@ -50,4 +50,13 @@ export class ArticulosService {
   reordenar(orden: { id: number; orden: number }[]): Observable<any> {
     return this.http.post(`${this.base}/api/articulos/reordenar`, { orden });
   }
+
+  conExistencia(q: { almacen_id: number; search?: string; categoria_id?: number | null; page?: number; per_page?: number }): Observable<Paginated<Articulo>> {
+    let params = new HttpParams().set('almacen_id', q.almacen_id);
+    if (q.search) params = params.set('search', q.search);
+    if (q.categoria_id) params = params.set('categoria_id', q.categoria_id);
+    if (q.page) params = params.set('page', q.page);
+    if (q.per_page) params = params.set('per_page', q.per_page);
+    return this.http.get<Paginated<Articulo>>(`${this.base}/api/articulos/con-existencia`, { params });
+  }
 }

@@ -254,10 +254,37 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 1fr 1.2fr;
-  gap: 10px;
+  grid-template-columns: calc(45% - 4px) 8px calc(55% - 4px);
+  gap: 0;
   overflow: hidden;
   transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.panel-resize-handle {
+  width: 8px;
+  cursor: col-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  z-index: 10;
+  position: relative;
+
+  &::after {
+    content: '';
+    display: block;
+    width: 3px;
+    height: 40px;
+    border-radius: 99px;
+    background: rgba(0, 0, 0, 0.15);
+    transition: background 0.15s, height 0.15s;
+  }
+
+  &:hover::after,
+  &:active::after {
+    background: rgba(0, 0, 0, 0.35);
+    height: 60px;
+  }
 }
 
 /* ── Panel ── */
@@ -871,6 +898,10 @@
 
   .main-content {
     grid-template-columns: 1fr;
+  }
+
+  .panel-resize-handle {
+    display: none;
   }
 
   .panel {

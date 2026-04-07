@@ -9,6 +9,7 @@ export interface Articulo {
   nombre: string;
   nombre_corto: string;
   unidad: string;
+  unidades_mayoreo: number | null;
   categoria_id: number;
   categoria?: Categoria;
   activo: boolean;

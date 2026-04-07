@@ -49,7 +49,7 @@
   <section class="grid">
 
     <!-- FULL WIDTH: catálogo + ticket -->
-    <div class="main-content">
+    <div class="main-content" #mainContent>
 
       <!-- LEFT: catálogo -->
       <aside class="panel panel-catalog">
@@ -111,6 +111,9 @@
         </div>
       </aside>
 
+      <!-- RESIZE HANDLE -->
+      <div class="panel-resize-handle" [appHorizontalResize]="mainContent" [resizeMin]="20" [resizeMax]="80"></div>
+
       <!-- CENTER: ticket -->
       <main class="panel panel-ticket">
         <div class="panel-header">
@@ -151,7 +154,7 @@
                 <!-- Controles de cantidad y precio -->
                 <div class="item-controls">
                   <div class="control-group qty-group">
-                    <div class="qty-control">
+                    <div class="qty-control"> 
                       <input class="qty-input" type="text" inputmode="none" autocomplete="off" spellcheck="false"
                         readonly [value]="cantidadView(x.key, x.cantidad)" (focus)="openKb(x.key, x.cantidad)" />
                     </div>
@@ -234,16 +237,17 @@
 
       <div class="checkout-section cliente-autocomplete">
         <label class="checkout-label">Cliente</label>
-        <div class="cliente-input-wrap" [class.is-open]="clienteDropdownOpen() && clientesFiltrados().length">
+        <div class="cliente-input-wrap" [class.is-open]="clienteDropdownOpen() && clientesFiltrados().length"
+          (click)="clienteInputEl.focus()">
           <span class="cliente-icon">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <circle cx="12" cy="8" r="4" />
               <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
             </svg>
           </span>
-          <input class="form-control form-control-sm cliente-input" [value]="clienteNombreCtrl.value"
+          <input #clienteInputEl class="form-control form-control-sm cliente-input" [value]="clienteNombreCtrl.value"
             (input)="onClienteInput($any($event.target).value)" (focus)="onClienteFocus()" (blur)="onClienteBlur()"
-            placeholder="Buscar cliente..." autocomplete="off" spellcheck="false" />
+            placeholder="Buscar cliente..." autocomplete="off" spellcheck="false" inputmode="text" />
           <button *ngIf="form.value.cliente_id" type="button" class="cliente-clear" (mousedown)="onClienteClear()"
             title="Quitar cliente">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">

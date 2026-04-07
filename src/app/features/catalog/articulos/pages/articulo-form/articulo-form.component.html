@@ -40,6 +40,15 @@
         <div class="invalid-hint" *ngIf="backendError('unidad')">{{ backendError('unidad') }}</div>
       </div>
 
+      <div class="col-12 col-md-3">
+        <label class="form-label">Unidades mayoreo</label>
+        <input type="number" class="form-control" formControlName="unidades_mayoreo" min="0.001" step="0.01"
+          placeholder="Opcional" [class.is-invalid]="isInvalid('unidades_mayoreo')"
+          (input)="clearBackendError('unidades_mayoreo')" />
+        <div class="invalid-hint" *ngIf="hasError('unidades_mayoreo')">Debe ser mayor a 0.</div>
+        <div class="invalid-hint" *ngIf="backendError('unidades_mayoreo')">{{ backendError('unidades_mayoreo') }}</div>
+      </div>
+
       <div class="col-12 col-md-2">
         <label class="form-label">Orden</label>
         <input type="number" class="form-control" formControlName="orden" min="0" [class.is-invalid]="isInvalid('orden')" (input)="clearBackendError('orden')" />

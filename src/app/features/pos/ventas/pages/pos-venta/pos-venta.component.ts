@@ -17,6 +17,7 @@ import { VentasService } from '../../data/ventas.service';
 import { PrinterService } from '../../../../../shared/services/printer.service';
 import { getTodayString } from '../../../../../shared/utils/date.utils';
 import { NumericKeyboardComponent } from '../../../../../shared/components/numeric-keyboard/numeric-keyboard.component';
+import { HorizontalResizeDirective } from '../../../../../shared/directives/horizontal-resize.directive';
 import { environment } from '../../../../../../enviroments/environment';
 
 
@@ -37,7 +38,7 @@ type CartLine = {
 @Component({
   selector: 'app-pos-venta',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, NumericKeyboardComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, NumericKeyboardComponent, HorizontalResizeDirective],
   templateUrl: './pos-venta.component.html',
   styleUrl: './pos-venta.component.scss',
 })
@@ -288,16 +289,14 @@ export class PosVentaComponent {
         this.resetGridAndLoad();
       });
 
-    // si cambia almacén: limpiar lotes y selección (evitar mezcla)
+    // si cambia almacén manualmente: limpiar lotes, selección y recargar grid
     this.form.controls.almacen_id.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.lotes.set([]);
         this.selectedArticulo.set(null);
+        this.resetGridAndLoad();
       });
-
-    // carga inicial grid
-    this.resetGridAndLoad();
     this.setDefaultsVenta();
   }
 
@@ -316,8 +315,10 @@ export class PosVentaComponent {
       next: (rows) => {
         this.almacenes.set(rows ?? []);
         if ((rows ?? []).length === 1 && !this.form.value.almacen_id) {
-          this.form.patchValue({ almacen_id: rows[0].id });
+          this.form.patchValue({ almacen_id: rows[0].id }, { emitEvent: false });
         }
+        // Cargar el grid una vez que sabemos el almacén disponible
+        this.resetGridAndLoad();
       },
       error: () => {
         // silencioso, no bloquear el POS
@@ -401,13 +402,20 @@ export class PosVentaComponent {
     if (!append) this.gridLoading.set(true);
     else this.gridLoadingMore.set(true);
 
+    const almacenId = this.form.value.almacen_id;
+    if (!almacenId) {
+      this.gridLoading.set(false);
+      this.gridLoadingMore.set(false);
+      return;
+    }
+
     this.articulosSvc
-      .list({
+      .conExistencia({
+        almacen_id: almacenId,
         page,
         per_page: this.gridPerPage(),
         search: search || undefined,
         categoria_id: categoria_id,
-        activo: true,
       })
       .subscribe({
         next: (res: any) => {
@@ -595,14 +603,28 @@ export class PosVentaComponent {
   }
 
   // ====== Ticket ======
+
+  /** Devuelve el precio que corresponde según la cantidad: mayoreo si cantidad >= unidades_mayoreo, normal en otro caso. */
+  private resolvePrice(lote: LoteDisponible, cantidad: number): number {
+    const mayoreo = this.toNumber(lote.articulo?.unidades_mayoreo ?? 0);
+    if (mayoreo > 0 && cantidad >= mayoreo) {
+      return this.toNumber(lote.precio_min);
+    }
+    return this.toNumber(lote.precio);
+  }
+
   addLote(l: LoteDisponible) {
     const key = String(l.id);
     const existing = this.cart().find((x) => x.key === key);
 
-    const precio = this.toNumber(l.precio);
-
     if (existing) {
-      this.setQty(key, existing.cantidad + 1);
+      const newCantidad = existing.cantidad + 1;
+      const newPrecio = this.resolvePrice(l, newCantidad);
+      this.cart.set(
+        this.cart().map((x) =>
+          x.key === key ? { ...x, cantidad: newCantidad, precio: newPrecio } : x,
+        ),
+      );      
       return;
     }
 
@@ -612,11 +634,12 @@ export class PosVentaComponent {
       articulo_id: l.articulo_id,
       lote_id: l.id,
       cantidad: 1,
-      precio,
+      precio: this.resolvePrice(l, 1),
       impuestos: 0,
     };
 
     this.cart.set([line, ...this.cart()]);
+    this.openKb(key, 1);
   }
 
   removeLine(key: string) {
@@ -662,7 +685,10 @@ export class PosVentaComponent {
     }
 
     this.cart.set(
-      this.cart().map((x) => (x.key === key ? { ...x, cantidad: this.round2(next) } : x)),
+      this.cart().map((x) => {
+        if (x.key !== key) return x;
+        return { ...x, cantidad: this.round2(next), precio: this.resolvePrice(x.lote, next) };
+      }),
     );
   }
 
@@ -726,7 +752,10 @@ export class PosVentaComponent {
     // Solo actualizar si cambió
     if (line.cantidad !== safe) {
       this.cart.set(
-        this.cart().map((x) => (x.key === key ? { ...x, cantidad: safe } : x)),
+        this.cart().map((x) => {
+          if (x.key !== key) return x;
+          return { ...x, cantidad: safe, precio: this.resolvePrice(x.lote, safe) };
+        }),
       );
     }
   }
@@ -755,7 +784,10 @@ export class PosVentaComponent {
 
     if (line.cantidad !== final) {
       this.cart.set(
-        this.cart().map((x) => (x.key === key ? { ...x, cantidad: final } : x)),
+        this.cart().map((x) => {
+          if (x.key !== key) return x;
+          return { ...x, cantidad: final, precio: this.resolvePrice(x.lote, final) };
+        }),
       );
     }
   }

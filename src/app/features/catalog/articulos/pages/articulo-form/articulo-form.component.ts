@@ -36,6 +36,7 @@ export class ArticuloFormComponent {
     nombre: ['', [Validators.required, Validators.maxLength(50)]],
     nombre_corto: ['', [Validators.required, Validators.maxLength(50)]],
     unidad: ['', [Validators.required, Validators.maxLength(5)]],
+    unidades_mayoreo: [null as number | null, [Validators.min(0.001)]],
     categoria_id: [null as number | null, [Validators.required]],
     activo: [true],
     orden: [null as number | null],
@@ -78,6 +79,7 @@ export class ArticuloFormComponent {
           nombre: a?.nombre ?? '',
           nombre_corto: a?.nombre_corto ?? '',
           unidad: a?.unidad ?? '',
+          unidades_mayoreo: a?.unidades_mayoreo ?? null,
           categoria_id: a?.categoria_id ?? null,
           activo: !!a?.activo,
           orden: a?.orden ?? null,
@@ -139,6 +141,7 @@ export class ArticuloFormComponent {
     fd.append('nombre', (raw.nombre ?? '').trim());
     fd.append('nombre_corto', (raw.nombre_corto ?? '').trim());
     fd.append('unidad', raw.unidad ?? '');
+    if (raw.unidades_mayoreo !== null && raw.unidades_mayoreo !== undefined) fd.append('unidades_mayoreo', String(raw.unidades_mayoreo));
     fd.append('categoria_id', String(Number(raw.categoria_id)));
     fd.append('activo', raw.activo ? '1' : '0');
     if (raw.orden !== null && raw.orden !== undefined) fd.append('orden', String(raw.orden));

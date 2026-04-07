@@ -50,6 +50,7 @@ export interface LoteDisponible {
         nombre: string;
         nombre_corto: string;
         unidad: string;
+        unidades_mayoreo: number | null;
         categoria_id: number;
         activo: boolean;
         imagen: string | null;
