@@ -16,7 +16,7 @@ export interface ArticulosQuery {
 export class ArticulosService {
   private base = environment.apiBaseUrl;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   list(q: ArticulosQuery): Observable<Paginated<Articulo>> {
     let params = new HttpParams()
@@ -58,5 +58,14 @@ export class ArticulosService {
     if (q.page) params = params.set('page', q.page);
     if (q.per_page) params = params.set('per_page', q.per_page);
     return this.http.get<Paginated<Articulo>>(`${this.base}/api/articulos/con-existencia`, { params });
+  }
+
+  importar(articulos: {
+    nombre: string;
+    nombre_corto: string;
+    unidad: string;
+    categoria_id: number;
+  }[]) {
+    return this.http.post(`${this.base}/api/articulos/importar`, { articulos });
   }
 }

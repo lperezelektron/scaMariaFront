@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, signal } from '@angular/core';
+import { Component, ElementRef, signal, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AgGridAngular } from 'ag-grid-angular';
 import {
@@ -20,6 +20,7 @@ import {
   ModalFooterComponent,
   ModalHeaderComponent,
 } from '@coreui/angular';
+import * as XLSX from 'xlsx';
 
 @Component({
   selector: 'app-articulos-list',
@@ -61,6 +62,8 @@ export class ArticulosListComponent {
     resizable: true,
     filter: false,
   };
+
+  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
   overlayNoRowsTemplate = `<div class="ag-overlay-msg">No hay artículos para mostrar.</div>`;
 
@@ -337,5 +340,126 @@ export class ArticulosListComponent {
       queryParams: qp,
       replaceUrl: true,
     });
+  }
+
+  openImport() {
+    this.fileInput.nativeElement.value = '';
+    this.fileInput.nativeElement.click();
+  }
+
+  onFileSelected(event: any) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = (e: any) => {
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, { type: 'array' });
+
+      const ws = wb.Sheets['Plantilla_Articulos'];
+      if (!ws) {
+        this.banner.set({
+          type: 'danger',
+          text: 'La hoja Plantilla_Articulos no existe'
+        });
+        return;
+      }
+
+      const json = XLSX.utils.sheet_to_json(ws, { defval: '', range: 2 });
+
+      const cleaned = json.map(r => this.normalizeRow(r));
+
+      console.log(cleaned[0]);
+
+      this.processImport(cleaned);
+    };
+
+    reader.readAsArrayBuffer(file); // ✅ nuevo método
+  }
+
+  processImport(rows: any[]) {
+    const payload: any[] = [];
+    const errores: string[] = [];
+
+    rows.forEach((r, i) => {
+      const fila = i + 2;
+
+      if (!r.nombre) {
+        errores.push(`Fila ${fila}: nombre requerido`);
+        return;
+      }
+
+      if (!r.unidad) {
+        errores.push(`Fila ${fila}: unidad requerida`);
+        return;
+      }
+
+      if (!r.categoria_id) {
+        errores.push(`Fila ${fila}: categoria_id requerido`);
+        return;
+      }
+
+      payload.push({
+        nombre: r.nombre,
+        nombre_corto: r.nombre_corto || r.nombre,
+        unidad: r.unidad,
+        categoria_id: Number(r.categoria_id)
+      });
+    });
+
+    if (errores.length) {
+      this.banner.set({
+        type: 'danger',
+        text: errores.join(' | ')
+      });
+      return;
+    }
+
+    this.sendToBackend(payload);
+  }
+
+  sendToBackend(data: any[]) {
+    this.banner.set({ type: 'info', text: 'Importando artículos...' });
+    console.log(JSON.stringify(data));
+    this.articulosSvc.importar(data).subscribe({
+      next: (res: any) => {
+        const { insertados, errores } = res;
+
+        if (errores?.length) {
+          this.banner.set({
+            type: 'danger',
+            text: `Se importaron ${insertados}, pero hubo ${errores.length} errores`
+          });
+
+          console.error('Errores de importación:', errores);
+        } else {
+          this.banner.set({
+            type: 'success',
+            text: `Importación exitosa (${insertados} artículos)`
+          });
+        }
+
+        this.reload();
+      },
+      error: (err: any) => {
+        console.error(err);
+        this.banner.set({
+          type: 'danger',
+          text: 'Error al importar artículos'
+        });
+      }
+    });
+  }
+
+  normalizeRow(row: any) {
+    const newRow: any = {};
+
+    Object.keys(row).forEach(key => {
+      const cleanKey = key.trim().toLowerCase();
+      newRow[cleanKey] = row[key];
+    });
+
+    return newRow;
   }
 }
