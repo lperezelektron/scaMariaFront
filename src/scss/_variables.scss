@@ -1,45 +1,85 @@
-// Variable overrides
-//
-// If you want to customize your project please add your variables below.
-
-// src/scss/_variables.scss
 // ========================================
-// EL LIMONERO — refined premium palette
+// ABARROTES MARIA — red dominant UI
 // ========================================
 
 // Brand
-$limonero-green: #1F7A3E;
-$limonero-green-dark: #0F2E1D;
-$limonero-lime: #A6D96A;
-$limonero-gold: #E6C75A;
-$limonero-red: #D94A4A;
+$maria-red: #B3262E;        // rojo principal (más profundo, menos chillón)
+$maria-red-dark: #7A1A1F;   // para gradientes y estados activos
+$maria-red-soft: #F6DADA;   // fondos suaves
 
+$maria-blue: #1E3A8A;
+$maria-blue-light: #2F5AC7;
+
+$maria-yellow: #F2C94C;
+$maria-green: #3A7D44;
+
+$maria-cream: #FDFBF5;
+$maria-text: #2A2A2A;
+
+
+// ========================================
 // Bootstrap overrides
-$primary: $limonero-green;
-$success: $limonero-green;
-$warning: $limonero-gold;
-$danger: $limonero-red;
+// ========================================
+$primary: $maria-red;
+$success: $maria-green;
+$warning: $maria-yellow;
+$danger: $maria-red-dark;
 
-$body-bg: #F6F8F4;
-$body-color: #1B1F1D;
+$body-bg: $maria-cream;
+$body-color: $maria-text;
 
+
+// ========================================
 // Cards
+// ========================================
 $card-border-radius: 1rem;
 $card-bg: #FFFFFF;
 
-// Sidebar (CoreUI variables)
-$sidebar-bg: linear-gradient(180deg, #145A2C 0%, #0F2E1D 100%);
-$sidebar-color: #EAF3ED;
 
-$sidebar-nav-link-color: #EAF3ED;
+// ========================================
+// Sidebar (CoreUI) 🔴 ROJO TOTAL
+// ========================================
+$sidebar-bg: linear-gradient(180deg, $maria-red 0%, $maria-red-dark 100%);
+$sidebar-color: #FFFFFF;
+
+$sidebar-nav-link-color: rgba(255, 255, 255, 0.85);
 $sidebar-nav-link-hover-color: #FFFFFF;
-$sidebar-nav-link-hover-bg: rgba(166, 217, 106, .15);
+$sidebar-nav-link-hover-bg: rgba(255, 255, 255, 0.10);
 
 $sidebar-nav-link-active-color: #FFFFFF;
-$sidebar-nav-link-active-bg: rgba(166, 217, 106, .25);
+$sidebar-nav-link-active-bg: rgba(255, 255, 255, 0.20);
 
+
+// ========================================
 // Header
+// ========================================
 $header-bg: #FFFFFF;
-$header-color: #1B1F1D;
+$header-color: $maria-text;
+$header-border-color: rgba(211, 47, 47, 0.15);
 
+
+// ========================================
+// Elementos secundarios → AZUL
+// ========================================
+$link-color: $maria-blue;
+$link-hover-color: $maria-blue-light;
+
+$btn-secondary-bg: $maria-blue;
+$btn-secondary-border-color: $maria-blue;
+$btn-secondary-color: #FFFFFF;
+
+
+// ========================================
+// Extras POS
+// ========================================
+$accent: $maria-yellow;
+$price-color: $maria-green;
+
+$border-color: #E5E7EB;
+
+$danger-soft: $maria-red-soft;
+$success-soft: #E8F5E9;
+
+
+// ========================================
 $enable-deprecation-messages: false !default;

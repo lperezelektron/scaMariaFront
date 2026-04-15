@@ -1793,3 +1793,538 @@
     }
   }
 }
+
+$maria-red: #b3262e;
+$maria-red-dark: #7a1a1f;
+$maria-red-deep: #631419;
+$maria-red-soft: #f8e7e8;
+$maria-red-soft-2: #f3d9db;
+
+$maria-blue: #1e3a8a;
+$maria-blue-light: #2f5ac7;
+$maria-blue-soft: #eaf0ff;
+
+$maria-yellow: #f2c94c;
+$maria-yellow-soft: #fbf1c7;
+
+$maria-green: #3a7d44;
+$maria-green-dark: #1f4d2e;
+$maria-green-soft: #e8f5e9;
+
+$maria-cream: #fdfbf5;
+$maria-paper: #fffdf9;
+$maria-text: #2a2a2a;
+$maria-text-soft: #6b7280;
+$maria-border: #eadfe0;
+
+.pos-sale {
+  background:
+    radial-gradient(circle at top left, rgba(179, 38, 46, .05), transparent 28%),
+    linear-gradient(180deg, #fffdfa 0%, $maria-cream 100%);
+}
+
+.pos-header {
+  background: linear-gradient(180deg, $maria-red 0%, $maria-red-dark 100%);
+  box-shadow: 0 10px 28px rgba(122, 26, 31, .22);
+  border: 1px solid rgba(255, 255, 255, .08);
+}
+
+.pos-logo {
+  font-weight: 900;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.pos-time {
+  opacity: .92;
+}
+
+.almacen-selector .form-select {
+  background: rgba(255, 255, 255, .96);
+  border: 1px solid rgba(255, 255, 255, .2);
+
+  &:focus {
+    border-color: rgba(30, 58, 138, .45);
+    box-shadow: 0 0 0 3px rgba(30, 58, 138, .14);
+  }
+}
+
+.printer-status-btn {
+  background: rgba(255, 255, 255, .08);
+  border-color: rgba(255, 255, 255, .18);
+  backdrop-filter: blur(6px);
+
+  &:hover {
+    background: rgba(255, 255, 255, .14);
+  }
+
+  &.printer-ok {
+    border-color: rgba(242, 201, 76, .65);
+    color: #fff3c2;
+    background: rgba(242, 201, 76, .12);
+  }
+
+  &.printer-none {
+    border-color: rgba(255, 255, 255, .14);
+    color: rgba(255, 255, 255, .75);
+  }
+}
+
+.action-btn {
+  background: rgba(255, 255, 255, .12);
+  border-color: rgba(255, 255, 255, .18);
+
+  &:hover {
+    background: rgba(255, 255, 255, .18);
+    border-color: rgba(255, 255, 255, .28);
+  }
+}
+
+.exit-btn {
+  background: $maria-blue;
+  box-shadow: 0 6px 18px rgba(30, 58, 138, .22);
+
+  &:hover {
+    background: $maria-blue-light;
+    box-shadow: 0 10px 22px rgba(30, 58, 138, .28);
+  }
+}
+
+.panel {
+  background: $maria-paper;
+  border: 1px solid rgba(179, 38, 46, .08);
+  box-shadow: 0 10px 24px rgba(26, 26, 26, .05);
+}
+
+.panel-header {
+  background: linear-gradient(180deg, rgba(179, 38, 46, .045) 0%, rgba(179, 38, 46, .02) 100%);
+  border-bottom: 1px solid rgba(179, 38, 46, .10);
+}
+
+.panel-title {
+  color: $maria-red-dark;
+  letter-spacing: .01em;
+}
+
+.ticket-count {
+  color: $maria-red-dark;
+  background: $maria-red-soft;
+  border: 1px solid rgba(179, 38, 46, .12);
+}
+
+.panel-resize-handle::after {
+  background: rgba(179, 38, 46, .16);
+}
+
+.panel-resize-handle:hover::after,
+.panel-resize-handle:active::after {
+  background: rgba(179, 38, 46, .36);
+}
+
+.search-row .form-control,
+.checkout-body .form-control,
+.checkout-body .form-select,
+.credit-days,
+.cliente-input {
+  border-color: rgba(179, 38, 46, .14);
+  background: #fff;
+
+  &:focus {
+    border-color: rgba(30, 58, 138, .45);
+    box-shadow: 0 0 0 3px rgba(30, 58, 138, .12);
+  }
+}
+
+.cats-row {
+  &::-webkit-scrollbar-thumb {
+    background: rgba(179, 38, 46, .20);
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(179, 38, 46, .05);
+  }
+}
+
+.cat-chip {
+  border-color: rgba(179, 38, 46, .12);
+  background: rgba(179, 38, 46, .04);
+  color: $maria-red-dark;
+
+  &:hover {
+    background: rgba(179, 38, 46, .08);
+  }
+
+  &.active {
+    color: #fff;
+    border-color: $maria-red;
+    background: linear-gradient(180deg, $maria-red 0%, $maria-red-dark 100%);
+    box-shadow: 0 8px 18px rgba(122, 26, 31, .18);
+  }
+}
+
+.muted,
+.muted-soft {
+  background: rgba(179, 38, 46, .04);
+  color: $maria-text;
+}
+
+.catalog-box,
+.ticket-section {
+  &::-webkit-scrollbar-thumb {
+    background: rgba(179, 38, 46, .18);
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(179, 38, 46, .04);
+  }
+}
+
+.catalog-box {
+  border-color: rgba(179, 38, 46, .10);
+  background: linear-gradient(180deg, rgba(255,255,255,.88) 0%, rgba(255,255,255,.96) 100%);
+}
+
+.art-grid {
+  gap: 12px;
+}
+
+.art-tile {
+  border-color: rgba(179, 38, 46, .10);
+  background: #fff;
+  box-shadow: 0 4px 10px rgba(17, 24, 39, .03);
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
+
+  &:hover {
+    background: linear-gradient(180deg, #fff 0%, rgba(179, 38, 46, .035) 100%);
+    border-color: rgba(179, 38, 46, .24);
+    box-shadow: 0 12px 24px rgba(122, 26, 31, .10);
+    transform: translateY(-2px);
+  }
+}
+
+.art-tile .img {
+  background: linear-gradient(180deg, rgba(179, 38, 46, .05) 0%, rgba(30, 58, 138, .04) 100%);
+}
+
+.art-tile .info .name {
+  color: $maria-text;
+}
+
+.ticket-col-headers {
+  background: linear-gradient(180deg, rgba(179, 38, 46, .06) 0%, rgba(179, 38, 46, .03) 100%);
+  border-bottom-color: rgba(179, 38, 46, .10);
+}
+
+.ticket-col-headers span {
+  color: $maria-red-dark;
+}
+
+.ticket-item {
+  border-color: rgba(179, 38, 46, .10);
+  background: #fff;
+
+  &:hover {
+    box-shadow: 0 14px 28px rgba(122, 26, 31, .08);
+  }
+}
+
+.ticket-item-warn {
+  border-color: rgba(179, 38, 46, .26);
+  background: linear-gradient(180deg, rgba(179, 38, 46, .045) 0%, rgba(179, 38, 46, .02) 100%);
+}
+
+.item-header {
+  border-bottom-color: rgba(179, 38, 46, .10);
+}
+
+.item-name {
+  color: $maria-text;
+}
+
+.variedad-prefix {
+  color: $maria-blue;
+}
+
+.btn-remove {
+  background: rgba(179, 38, 46, .08);
+  color: $maria-red;
+
+  &:hover {
+    background: rgba(179, 38, 46, .14);
+  }
+}
+
+.qty-input {
+  border-color: rgba(179, 38, 46, .14);
+  background: #fff;
+
+  &:focus {
+    border-color: rgba(30, 58, 138, .45);
+    box-shadow: 0 0 0 3px rgba(30, 58, 138, .12);
+  }
+}
+
+.subtotal-display {
+  background: rgba(58, 125, 68, .10);
+  border-color: rgba(58, 125, 68, .24);
+  color: $maria-green-dark;
+}
+
+.item-alerts {
+  border-top-color: rgba(179, 38, 46, .18);
+}
+
+.alert-message {
+  background: rgba(179, 38, 46, .08);
+  color: $maria-red;
+}
+
+.empty-ticket {
+  .empty-text {
+    color: $maria-red-dark;
+  }
+
+  .empty-hint {
+    color: $maria-text-soft;
+  }
+}
+
+.cart-fab {
+  background: linear-gradient(180deg, $maria-red 0%, $maria-red-dark 100%);
+  box-shadow: 0 12px 28px rgba(122, 26, 31, .32);
+
+  &:hover {
+    box-shadow: 0 18px 34px rgba(122, 26, 31, .36);
+  }
+}
+
+.cart-badge {
+  background: $maria-blue;
+  box-shadow: 0 4px 10px rgba(30, 58, 138, .25);
+}
+
+.checkout-backdrop,
+.modal-backdrop,
+.confirm-backdrop {
+  background: rgba(42, 42, 42, .45);
+}
+
+.checkout-sidebar,
+.lotes-modal,
+.confirm-modal {
+  background: #fffdfa;
+  border-left: 1px solid rgba(179, 38, 46, .12);
+  box-shadow: -10px 0 32px rgba(17, 24, 39, .12);
+}
+
+.checkout-header,
+.modal-header,
+.confirm-header {
+  background: linear-gradient(180deg, rgba(179, 38, 46, .08) 0%, rgba(179, 38, 46, .03) 100%);
+  border-bottom: 1px solid rgba(179, 38, 46, .10);
+}
+
+.checkout-title,
+.modal-title .title,
+.confirm-title {
+  color: $maria-red-dark;
+}
+
+.checkout-label,
+.optional-badge,
+.form-check-label,
+.print-copies-label {
+  color: $maria-text;
+}
+
+.optional-badge {
+  background: $maria-yellow-soft;
+  color: #7a5710;
+  border: 1px solid rgba(242, 201, 76, .35);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.checkout-totals {
+  background: linear-gradient(180deg, rgba(179, 38, 46, .04) 0%, rgba(242, 201, 76, .08) 100%);
+  border: 1px solid rgba(179, 38, 46, .10);
+  border-radius: 1rem;
+}
+
+.total-row {
+  color: $maria-text;
+}
+
+.total-final {
+  color: $maria-red-dark;
+
+  strong {
+    color: $maria-red;
+  }
+}
+
+.checkout-btn,
+.btn.btn-primary {
+  background: linear-gradient(180deg, $maria-red 0%, $maria-red-dark 100%);
+  border-color: $maria-red-dark;
+  box-shadow: 0 10px 22px rgba(122, 26, 31, .20);
+
+  &:hover,
+  &:focus {
+    background: linear-gradient(180deg, #c62d36 0%, $maria-red-deep 100%);
+    border-color: $maria-red-deep;
+  }
+
+  &:disabled {
+    background: #d9b4b6;
+    border-color: #d9b4b6;
+    box-shadow: none;
+  }
+}
+
+.btn.btn-secondary {
+  background: $maria-blue;
+  border-color: $maria-blue;
+
+  &:hover,
+  &:focus {
+    background: $maria-blue-light;
+    border-color: $maria-blue-light;
+  }
+}
+
+.btn.btn-danger {
+  background: $maria-red;
+  border-color: $maria-red;
+}
+
+.btn.btn-success {
+  background: $maria-green;
+  border-color: $maria-green;
+
+  &:hover,
+  &:focus {
+    background: $maria-green-dark;
+    border-color: $maria-green-dark;
+  }
+}
+
+.cliente-input-wrap {
+  border: 1px solid rgba(179, 38, 46, .14);
+  background: #fff;
+
+  &.is-open,
+  &:focus-within {
+    border-color: rgba(30, 58, 138, .45);
+    box-shadow: 0 0 0 3px rgba(30, 58, 138, .12);
+  }
+}
+
+.cliente-icon,
+.cliente-chevron,
+.cliente-option-icon {
+  color: $maria-blue;
+}
+
+.cliente-dropdown {
+  background: #fff;
+  border: 1px solid rgba(179, 38, 46, .12);
+  box-shadow: 0 14px 28px rgba(17, 24, 39, .10);
+}
+
+.cliente-option {
+  &:hover {
+    background: rgba(179, 38, 46, .05);
+  }
+}
+
+.lote-item {
+  border: 1px solid rgba(179, 38, 46, .10);
+  background: #fff;
+
+  &:hover {
+    border-color: rgba(179, 38, 46, .20);
+    background: linear-gradient(180deg, #fff 0%, rgba(179, 38, 46, .035) 100%);
+  }
+}
+
+.lote-variedad {
+  color: $maria-red-dark;
+}
+
+.pill {
+  background: rgba(30, 58, 138, .08);
+  color: $maria-blue;
+  border: 1px solid rgba(30, 58, 138, .12);
+}
+
+.precio-venta {
+  color: $maria-green-dark;
+}
+
+.precio-min {
+  color: $maria-blue;
+}
+
+.confirm-icon {
+  background: rgba(179, 38, 46, .08);
+  color: $maria-red;
+}
+
+.print-dialog-icon {
+  color: $maria-green-dark;
+}
+
+.print-copy-option {
+  border: 1px solid rgba(179, 38, 46, .12);
+  background: rgba(179, 38, 46, .03);
+
+  &:has(input:checked) {
+    border-color: $maria-red;
+    background: $maria-red-soft;
+    color: $maria-red-dark;
+  }
+}
+
+.printer-item {
+  border-color: rgba(179, 38, 46, .12);
+
+  &:hover {
+    background: rgba(179, 38, 46, .05);
+  }
+
+  &.active {
+    border-color: rgba(30, 58, 138, .30);
+    background: rgba(30, 58, 138, .08);
+    color: $maria-blue;
+  }
+
+  .check-icon {
+    color: $maria-blue;
+  }
+}
+
+.text-danger.small,
+.text-danger {
+  color: $maria-red !important;
+}
+
+@media (max-width: 1024px) {
+  .pos-header {
+    box-shadow: 0 8px 22px rgba(122, 26, 31, .18);
+  }
+}
+
+@media (max-width: 768px) {
+  .cart-fab {
+    right: 18px;
+    bottom: 18px;
+  }
+
+  .panel,
+  .checkout-sidebar,
+  .lotes-modal,
+  .confirm-modal {
+    border-radius: 1rem;
+  }
+}
