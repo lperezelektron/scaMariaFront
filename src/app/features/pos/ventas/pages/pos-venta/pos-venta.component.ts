@@ -65,6 +65,7 @@ export class PosVentaComponent {
   saving = signal(false);
   showLotesModal = signal(false);
   showCheckout = signal(true);
+  catsExpanded = signal(false);
 
   banner = signal<{ type: 'success' | 'danger' | 'info'; text: string } | null>(null);
   fieldErrors = signal<FieldErrors>({});

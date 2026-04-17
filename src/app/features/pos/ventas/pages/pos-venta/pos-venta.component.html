@@ -56,7 +56,7 @@
         <div class="panel-header">
           <!-- Filtros rápidos -->
           <div class="catalog-toolbar">
-            <div class="cats-row" *ngIf="categorias().length">
+            <div class="cats-row" *ngIf="categorias().length" [class.cats-expanded]="catsExpanded()">
               <button type="button" class="cat-chip" [class.active]="categoriaId()==='all'"
                 (click)="setCategoria('all')">
                 Todas
@@ -67,6 +67,10 @@
                 {{ c.descripcion }}
               </button>
             </div>
+            <button type="button" class="cats-toggle" *ngIf="categorias().length > 4"
+              (click)="catsExpanded.set(!catsExpanded())">
+              {{ catsExpanded() ? '▲ Ver menos' : '▼ Ver más' }}
+            </button>
 
             <div class="search-row">
               <input class="form-control form-control-sm" [value]="articuloSearch()"

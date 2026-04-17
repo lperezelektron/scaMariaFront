@@ -367,27 +367,15 @@
 .cats-row {
   width: 100%;
   display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding-bottom: 8px;
-  padding-right: 6px;
-  -webkit-overflow-scrolling: touch;
-  min-height: 44px;
+  gap: 6px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  overflow: hidden;
+  max-height: calc(34px * 2 + 6px * 1 + 2px); // Máximo 2 filas visibles
+  transition: max-height 0.25s ease;
 
-  &::-webkit-scrollbar {
-    height: 8px;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, .18);
-    border-radius: 999px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, .04);
+  &.cats-expanded {
+    max-height: 999px; // Expandido: todas las filas
   }
 }
 
@@ -397,12 +385,13 @@
   background: rgba(0, 0, 0, .03);
   color: #111827;
   border-radius: 999px;
-  padding: 8px 14px;
+  padding: 6px 12px;
   font-weight: 800;
-  font-size: .85rem;
+  font-size: .8rem;
   white-space: nowrap;
   cursor: pointer;
-  min-height: 34px;
+  min-height: 30px;
+  line-height: 1;
 
   &:hover {
     background: rgba(0, 0, 0, .05);
@@ -412,6 +401,24 @@
     border-color: rgba(13, 110, 253, .35);
     box-shadow: 0 0 0 .15rem rgba(13, 110, 253, .12);
     background: rgba(13, 110, 253, .08);
+  }
+}
+
+.cats-toggle {
+  flex-shrink: 0;
+  align-self: flex-start;
+  border: none;
+  background: none;
+  color: #6b7280;
+  font-size: .75rem;
+  font-weight: 700;
+  padding: 2px 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  margin-top: 2px;
+
+  &:hover {
+    color: #374151;
   }
 }
 
