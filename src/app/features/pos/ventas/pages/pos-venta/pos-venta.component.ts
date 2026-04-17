@@ -473,9 +473,6 @@ export class PosVentaComponent {
 
     this.banner.set(null);
     this.selectedArticulo.set(a);
-    this.showLotesModal.set(true);
-
-    // Cargar lotes inmediatamente sin esperar
     this.loadLotes(a.id);
   }
 
@@ -510,6 +507,11 @@ export class PosVentaComponent {
         next: (rows) => {
           this.lotes.set(rows ?? []);
           this.loadingLotes.set(false);
+          if (rows?.length) {
+            this.selectLote(rows[0]);
+          } else {
+            this.banner.set({ type: 'danger', text: 'Sin existencia disponible para este artículo.' });
+          }
         },
         error: (err) => {
           this.loadingLotes.set(false);

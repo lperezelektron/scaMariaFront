@@ -69,12 +69,13 @@ export class CompraFormComponent {
   showData = signal<CompraShowResponse | null>(null);
   fieldErrors = signal<Record<string, string[]>>({});
 
+  articuloNombres: string[] = [];
+  articuloDropdownOpens: boolean[] = [];
+
   // ✅ Totales reactivos (siempre correctos)
   totals = signal({ subtotal: 0, impuestos: 0, total: 0 });
 
-  // ✅ Regex: solo letras/espacios/acentos/ñ, guion, punto. SIN números.
-  // Ajusta si quieres permitir "/" o "(" etc.
-  private readonly variedadRegex = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s\.\-]+$/;
+  private readonly variedadRegex = /^[A-Za-z0-9ÁÉÍÓÚÜÑáéíóúüñ\s\.\-\/]+$/;
 
   form = new FormGroup({
     fecha: new FormControl<string>(getTodayString(), { nonNullable: true, validators: [Validators.required] }),
@@ -144,6 +145,8 @@ export class CompraFormComponent {
 
         // detalles
         this.detalles.clear();
+        this.articuloNombres = [];
+        this.articuloDropdownOpens = [];
         (data.detalles ?? []).forEach((d) => {
           const g = this.rowGroup();
           g.patchValue({
@@ -159,6 +162,8 @@ export class CompraFormComponent {
             precio_min: 0,
           });
           this.detalles.push(g);
+          this.articuloNombres.push(d.articulo?.nombre ?? '');
+          this.articuloDropdownOpens.push(false);
         });
 
         this.fieldErrors.set({});
@@ -209,13 +214,52 @@ export class CompraFormComponent {
 
   addRow() {
     this.detalles.push(this.rowGroup());
+    this.articuloNombres.push('');
+    this.articuloDropdownOpens.push(false);
     this.recalcTotals();
   }
 
   removeRow(i: number) {
     this.detalles.removeAt(i);
+    this.articuloNombres.splice(i, 1);
+    this.articuloDropdownOpens.splice(i, 1);
     if (this.detalles.length === 0) this.addRow();
     this.recalcTotals();
+  }
+
+  getArticulosFiltrados(i: number): Articulo[] {
+    const q = (this.articuloNombres[i] ?? '').toLowerCase().trim();
+    if (!q) return this.articulos().slice(0, 20);
+    return this.articulos()
+      .filter(a => a.nombre?.toLowerCase().includes(q))
+      .slice(0, 20);
+  }
+
+  onArticuloInput(i: number, value: string) {
+    this.articuloNombres[i] = value;
+    this.articuloDropdownOpens[i] = true;
+    if (!value) this.detalles.at(i).get('articulo_id')?.setValue(null);
+  }
+
+  onArticuloFocus(i: number) {
+    this.articuloDropdownOpens[i] = true;
+  }
+
+  onArticuloBlur(i: number) {
+    setTimeout(() => { this.articuloDropdownOpens[i] = false; }, 200);
+  }
+
+  onArticuloSelect(i: number, a: Articulo) {
+    this.articuloNombres[i] = a.nombre;
+    this.articuloDropdownOpens[i] = false;
+    this.detalles.at(i).get('articulo_id')?.setValue(a.id);
+    this.detalles.at(i).get('articulo_id')?.markAsTouched();
+  }
+
+  onArticuloClear(i: number) {
+    this.articuloNombres[i] = '';
+    this.articuloDropdownOpens[i] = true;
+    this.detalles.at(i).get('articulo_id')?.setValue(null);
   }
 
   private n(v: any): number {

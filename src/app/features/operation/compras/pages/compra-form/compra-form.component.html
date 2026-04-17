@@ -140,14 +140,42 @@
                 <tbody formArrayName="detalles">
                   <tr *ngFor="let g of detalles.controls; let i = index" [formGroupName]="i">
                     <td>
-                      <select class="form-select" formControlName="articulo_id" [disabled]="!!id">
-                        <option [ngValue]="null">Selecciona…</option>
-                        <option *ngFor="let a of articulos()" [ngValue]="a.id">
-                          {{ a.nombre }}
-                        </option>
-                      </select>
+                      <div class="articulo-autocomplete">
+                        <input
+                          class="form-control"
+                          type="text"
+                          [value]="articuloNombres[i]"
+                          (input)="onArticuloInput(i, $any($event.target).value)"
+                          (focus)="onArticuloFocus(i)"
+                          (blur)="onArticuloBlur(i)"
+                          placeholder="Buscar artículo..."
+                          autocomplete="off"
+                          spellcheck="false"
+                          [readonly]="!!id"
+                        />
+                        <button
+                          *ngIf="detalles.at(i).get('articulo_id')?.value && !id"
+                          type="button"
+                          class="articulo-clear"
+                          (mousedown)="onArticuloClear(i)"
+                          title="Quitar artículo"
+                        >✕</button>
+                        <ul
+                          *ngIf="articuloDropdownOpens[i] && getArticulosFiltrados(i).length"
+                          class="articulo-dropdown"
+                        >
+                          <li
+                            *ngFor="let a of getArticulosFiltrados(i)"
+                            class="articulo-option"
+                            (mousedown)="onArticuloSelect(i, a)"
+                          >{{ a.nombre }}</li>
+                        </ul>
+                      </div>
                       <div class="text-danger small" *ngIf="fieldErrors()['detalles.' + i + '.articulo_id']?.length">
                         {{ fieldErrors()['detalles.' + i + '.articulo_id'][0] }}
+                      </div>
+                      <div class="text-danger small" *ngIf="detalles.at(i).get('articulo_id')?.touched && detalles.at(i).get('articulo_id')?.errors?.['required']">
+                        El artículo es requerido.
                       </div>
                     </td>
 
@@ -156,7 +184,7 @@
                         placeholder="Ej: Chica, Mediana, Grande" />
                       <div class="text-danger small" *ngIf="g.get('variedad')?.touched && g.get('variedad')?.invalid">
                         <span *ngIf="g.get('variedad')?.errors?.['required']">La variedad es requerida.</span>
-                        <span *ngIf="g.get('variedad')?.errors?.['pattern']">Solo texto (sin números).</span>
+                        <span *ngIf="g.get('variedad')?.errors?.['pattern']">Solo letras, números y espacios.</span>
                         <span *ngIf="g.get('variedad')?.errors?.['maxlength']">Máximo 50 caracteres.</span>
                       </div>
                     </td>
