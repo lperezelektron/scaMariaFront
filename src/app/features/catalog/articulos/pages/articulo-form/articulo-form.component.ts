@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Categoria } from '../../data/articulos.models';
 import { ArticulosService } from '../../data/articulos.service';
 import { CategoriasService } from '../../data/categorias.service';
+import { ImageSearchService, ImageResult } from '../../data/image-search.service';
 
 type FieldErrors = Record<string, string[]>;
 
@@ -20,16 +21,22 @@ export class ArticuloFormComponent {
   loading = signal(false);
   saving = signal(false);
 
-  // si hay id => edit
   articuloId: number | null = null;
   mode: 'create' | 'edit' = 'create';
 
-  // imagen
+  // imagen subida manualmente
   imagenFile: File | null = null;
   imagenPreview = signal<string | null>(null);
   imagenActual = signal<string | null>(null);
 
-  // errores 422 por campo
+  // buscador de imágenes
+  showImageSearch = signal(false);
+  searchQuery = signal('');
+  searchResults = signal<ImageResult[]>([]);
+  searching = signal(false);
+  searchError = signal<string | null>(null);
+  downloadingImage = signal(false);
+
   fieldErrors = signal<FieldErrors>({});
 
   form = this.fb.group({
@@ -48,6 +55,7 @@ export class ArticuloFormComponent {
     private router: Router,
     private articulosSvc: ArticulosService,
     private categoriasSvc: CategoriasService,
+    private imageSearchSvc: ImageSearchService,
   ) {
     const idParam = this.route.snapshot.paramMap.get('id');
     this.articuloId = idParam ? Number(idParam) : null;
@@ -74,7 +82,7 @@ export class ArticuloFormComponent {
 
     this.articulosSvc.get(this.articuloId).subscribe({
       next: (res: any) => {
-        const a = res?.articulo ?? res; // por si cambia la forma
+        const a = res?.articulo ?? res;
         this.form.patchValue({
           nombre: a?.nombre ?? '',
           nombre_corto: a?.nombre_corto ?? '',
@@ -84,7 +92,7 @@ export class ArticuloFormComponent {
           activo: !!a?.activo,
           orden: a?.orden ?? null,
         });
-        this.imagenActual.set(a?.imagen ?? null);
+        this.imagenActual.set(a?.imagen_url ?? a?.imagen ?? null);
         this.fieldErrors.set({});
         this.loading.set(false);
       },
@@ -108,7 +116,73 @@ export class ArticuloFormComponent {
     }
   }
 
-  // helpers para errores
+  // ── Buscador de imágenes ────────────────────────────────────────────────
+
+  toggleImageSearch() {
+    const open = !this.showImageSearch();
+    this.showImageSearch.set(open);
+
+    if (open && !this.searchResults().length) {
+      const nombre = this.form.value.nombre ?? '';
+      const catId = this.form.value.categoria_id;
+      const cat = catId ? this.categorias().find(c => c.id === catId) : null;
+      const query = cat ? `${cat.descripcion} ${nombre}` : nombre;
+      this.searchQuery.set(query);
+      if (query.trim()) this.buscarImagenes();
+    }
+  }
+
+  buscarImagenes() {
+    const q = this.searchQuery().trim();
+    if (!q) return;
+
+    this.searching.set(true);
+    this.searchError.set(null);
+    this.searchResults.set([]);
+
+    this.imageSearchSvc.search(q).subscribe({
+      next: (imgs) => {
+        this.searchResults.set(imgs);
+        this.searching.set(false);
+        if (!imgs.length) this.searchError.set('No se encontraron imágenes. Intenta con otro término.');
+      },
+      error: () => {
+        this.searching.set(false);
+        this.searchError.set('Error al buscar imágenes. Verifica tu API key.');
+      },
+    });
+  }
+
+  async seleccionarImagenUrl(url: string) {
+    this.downloadingImage.set(true);
+    this.searchError.set(null);
+
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('fetch failed');
+      const blob = await response.blob();
+      const ext = (blob.type.split('/')[1] || 'jpg').replace('jpeg', 'jpg');
+      const file = new File([blob], `articulo.${ext}`, { type: blob.type });
+      this.imagenFile = file;
+      this.imagenPreview.set(URL.createObjectURL(blob));
+      this.showImageSearch.set(false);
+    } catch {
+      this.searchError.set('No se pudo descargar la imagen (CORS). Descárgala manualmente y súbela.');
+    } finally {
+      this.downloadingImage.set(false);
+    }
+  }
+
+  onSearchImgError(event: Event) {
+    (event.target as HTMLElement).closest('.img-result-card')?.classList.add('img-result-card--broken');
+  }
+
+  onSearchQueryInput(event: Event) {
+    this.searchQuery.set((event.target as HTMLInputElement).value);
+  }
+
+  // ── Helpers de validación ───────────────────────────────────────────────
+
   hasError(field: string): boolean {
     const c = this.form.get(field);
     return !!c && c.touched && c.invalid;
@@ -127,6 +201,22 @@ export class ArticuloFormComponent {
     const err = this.fieldErrors()[field];
     return err?.[0] ?? null;
   }
+
+  isInvalid(field: string): boolean {
+    const c = this.form.get(field);
+    const backend = !!this.fieldErrors()[field]?.length;
+    return (!!c && c.touched && c.invalid) || backend;
+  }
+
+  clearBackendError(field: string) {
+    const errs = { ...this.fieldErrors() };
+    if (errs[field]) {
+      delete errs[field];
+      this.fieldErrors.set(errs);
+    }
+  }
+
+  // ── Submit ──────────────────────────────────────────────────────────────
 
   submit() {
     this.fieldErrors.set({});
@@ -160,7 +250,6 @@ export class ArticuloFormComponent {
       error: (err) => {
         this.saving.set(false);
 
-        // Laravel 422
         if (err?.status === 422 && err?.error?.errors) {
           this.fieldErrors.set(err.error.errors as FieldErrors);
           return;
@@ -169,20 +258,6 @@ export class ArticuloFormComponent {
         alert(err?.error?.message ?? 'Ocurrió un error al guardar.');
       },
     });
-  }
-
-  isInvalid(field: string): boolean {
-    const c = this.form.get(field);
-    const backend = !!this.fieldErrors()[field]?.length;
-    return (!!c && c.touched && c.invalid) || backend;
-  }
-
-  clearBackendError(field: string) {
-    const errs = { ...this.fieldErrors() };
-    if (errs[field]) {
-      delete errs[field];
-      this.fieldErrors.set(errs);
-    }
   }
 
   cancel() {

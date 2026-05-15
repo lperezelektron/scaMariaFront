@@ -72,15 +72,76 @@
         </div>
       </div>
 
-      <div class="col-12 col-md-6">
+      <!-- ── Imagen ── -->
+      <div class="col-12 col-md-8">
         <label class="form-label">Imagen</label>
-        <input type="file" class="form-control" accept="image/*" (change)="onImageChange($event)" />
+
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+          <input type="file" class="form-control" style="max-width: 300px;" accept="image/*" (change)="onImageChange($event)" />
+          <button
+            type="button"
+            class="btn btn-outline-primary btn-sm"
+            (click)="toggleImageSearch()"
+            [class.active]="showImageSearch()"
+          >
+            {{ showImageSearch() ? 'Cerrar búsqueda' : 'Buscar en web' }}
+          </button>
+        </div>
+
+        <!-- panel búsqueda -->
+        <div class="img-search-panel" *ngIf="showImageSearch()">
+
+          <div class="img-search-bar">
+            <input
+              class="form-control form-control-sm"
+              [value]="searchQuery()"
+              (input)="onSearchQueryInput($event)"
+              (keyup.enter)="buscarImagenes()"
+              placeholder="ej: aceite Cristal 1.5 litros"
+            />
+            <button
+              type="button"
+              class="btn btn-primary btn-sm"
+              (click)="buscarImagenes()"
+              [disabled]="searching() || downloadingImage()"
+            >
+              {{ searching() ? 'Buscando...' : 'Buscar' }}
+            </button>
+          </div>
+
+          <div class="img-search-status text-muted" *ngIf="searching()">
+            Buscando imágenes con IA...
+          </div>
+
+          <div class="img-search-status text-muted" *ngIf="downloadingImage()">
+            Descargando imagen...
+          </div>
+
+          <div class="invalid-hint" *ngIf="searchError()">{{ searchError() }}</div>
+
+          <div class="img-results" *ngIf="searchResults().length && !searching()">
+            <div
+              class="img-result-card"
+              *ngFor="let img of searchResults()"
+              (click)="seleccionarImagenUrl(img.url)"
+              [title]="img.title"
+            >
+              <img [src]="img.url" [alt]="img.title" (error)="onSearchImgError($event)" />
+              <span class="img-result-card__label">{{ img.title }}</span>
+            </div>
+          </div>
+
+        </div>
+        <!-- /panel búsqueda -->
+
+        <!-- preview -->
         <div *ngIf="imagenPreview() as preview" class="mt-2">
           <img [src]="preview" alt="Vista previa" style="max-height: 120px; border-radius: 4px;" />
         </div>
         <div *ngIf="!imagenPreview() && imagenActual() as actual" class="mt-2">
           <img [src]="actual" alt="Imagen actual" style="max-height: 120px; border-radius: 4px;" />
         </div>
+
         <div class="invalid-hint" *ngIf="backendError('imagen')">{{ backendError('imagen') }}</div>
       </div>
 
