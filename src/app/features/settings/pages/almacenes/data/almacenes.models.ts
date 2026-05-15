@@ -18,6 +18,10 @@ export interface InventarioItem {
   existencia: number;
   costo: number;
   precio?: number | null;
+  precio_mayoreo?: number | null;
+  cant_mayoreo?: number | null;
+  precio_menudeo?: number | null;
+  cant_menudeo?: number | null;
   precio_min?: number | null;
   variedad?: string | null;
   empaque?: number | null;

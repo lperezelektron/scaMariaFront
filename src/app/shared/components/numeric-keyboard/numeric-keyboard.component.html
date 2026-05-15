@@ -1,7 +1,21 @@
 <div class="numkb-overlay" (click)="onCancel()"></div>
 
 <div class="numkb-panel">
+
+    <!-- Toggle Cantidad / Importe -->
+    <div class="numkb-toggle" *ngIf="showModeToggle">
+        <button type="button" class="numkb-toggle-btn" [class.active]="captureMode === 'qty'"
+            (click)="setMode('qty')">
+            Cantidad
+        </button>
+        <button type="button" class="numkb-toggle-btn" [class.active]="captureMode === 'amount'"
+            (click)="setMode('amount')">
+            Importe $
+        </button>
+    </div>
+
     <div class="numkb-display">
+        <span class="numkb-label">{{ captureMode === 'amount' ? 'IMPORTE $' : 'CANTIDAD' }}</span>
         <span class="numkb-value">{{ value || '0' }}</span>
     </div>
 

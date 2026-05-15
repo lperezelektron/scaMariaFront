@@ -18,12 +18,50 @@
     width: min(360px, 92vw);
 }
 
+.numkb-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    margin-bottom: 10px;
+    background: #f0f2f5;
+    border-radius: 10px;
+    padding: 3px;
+}
+
+.numkb-toggle-btn {
+    border: none;
+    border-radius: 8px;
+    padding: 8px 0;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    background: transparent;
+    color: #666;
+    transition: background .15s, color .15s;
+
+    &.active {
+        background: #fff;
+        color: #2563eb;
+        font-weight: 600;
+        box-shadow: 0 1px 4px rgba(0,0,0,.1);
+    }
+}
+
 .numkb-display {
     background: #f4f6f8;
     border-radius: 8px;
-    padding: 10px 16px;
+    padding: 8px 16px 10px;
     margin-bottom: 12px;
     text-align: right;
+}
+
+.numkb-label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: .08em;
+    color: #888;
+    margin-bottom: 2px;
 }
 
 .numkb-value {

@@ -34,7 +34,14 @@ export class InventarioService {
     return this.http.get<Paginated<InventarioRow>>(`${this.base}/api/inventario`, { params });
   }
 
-  updatePrecios(id: number, payload: { precio?: number; precio_min?: number }): Observable<any> {
+  updatePrecios(id: number, payload: {
+    precio?: number | null;
+    precio_mayoreo?: number | null;
+    cant_mayoreo?: number | null;
+    precio_menudeo?: number | null;
+    cant_menudeo?: number | null;
+    precio_min?: number | null;
+  }): Observable<any> {
     return this.http.patch(`${this.base}/api/inventario/${id}/precios`, payload);
   }
 

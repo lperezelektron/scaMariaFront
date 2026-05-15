@@ -91,16 +91,15 @@
       <!-- Datos del artículo (solo lectura) -->
       <div class="mb-3 p-3 rounded bg-body-secondary">
         <div class="fw-semibold">{{ item.articulo?.nombre ?? '-' }}</div>
-        <div class="text-muted small mt-1" *ngIf="item.variedad">
-          Variedad: {{ item.variedad }}
-        </div>
+        <div class="text-muted small mt-1" *ngIf="item.variedad">Variedad: {{ item.variedad }}</div>
+        <div class="text-muted small" *ngIf="item.articulo?.unidad">Unidad: {{ item.articulo?.unidad }}</div>
       </div>
 
-      <!-- Formulario -->
       <form [formGroup]="editForm" class="d-flex flex-column gap-3">
 
+        <!-- Precio normal -->
         <div>
-          <label class="form-label">Precio de venta</label>
+          <label class="form-label fw-semibold">Precio de venta</label>
           <div class="input-group">
             <span class="input-group-text">$</span>
             <input type="number" class="form-control" formControlName="precio"
@@ -112,22 +111,85 @@
           </div>
         </div>
 
+        <hr class="my-1" />
+
+        <!-- Política mayoreo -->
         <div>
-          <label class="form-label">Precio mínimo</label>
+          <div class="fw-semibold small text-muted mb-2">
+            MAYOREO — precio cuando la cantidad es mayor a
+          </div>
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="form-label small">Cantidad mínima</label>
+              <input type="number" class="form-control form-control-sm" formControlName="cant_mayoreo"
+                min="0.001" step="0.001" placeholder="ej: 1.000" />
+              <div class="form-text text-danger"
+                *ngIf="editForm.controls.cant_mayoreo.invalid && editForm.controls.cant_mayoreo.touched">
+                Debe ser mayor a 0.
+              </div>
+            </div>
+            <div class="col-6">
+              <label class="form-label small">Precio mayoreo</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text">$</span>
+                <input type="number" class="form-control" formControlName="precio_mayoreo"
+                  min="0" step="0.01" placeholder="0.00" />
+              </div>
+              <div class="form-text text-danger"
+                *ngIf="editForm.controls.precio_mayoreo.invalid && editForm.controls.precio_mayoreo.touched">
+                Precio inválido.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <hr class="my-1" />
+
+        <!-- Política menudeo -->
+        <div>
+          <div class="fw-semibold small text-muted mb-2">
+            MENUDEO — precio cuando la cantidad es menor a
+          </div>
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="form-label small">Cantidad máxima</label>
+              <input type="number" class="form-control form-control-sm" formControlName="cant_menudeo"
+                min="0.001" step="0.001" placeholder="ej: 0.500" />
+              <div class="form-text text-danger"
+                *ngIf="editForm.controls.cant_menudeo.invalid && editForm.controls.cant_menudeo.touched">
+                Debe ser mayor a 0.
+              </div>
+            </div>
+            <div class="col-6">
+              <label class="form-label small">Precio menudeo</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text">$</span>
+                <input type="number" class="form-control" formControlName="precio_menudeo"
+                  min="0" step="0.01" placeholder="0.00" />
+              </div>
+              <div class="form-text text-danger"
+                *ngIf="editForm.controls.precio_menudeo.invalid && editForm.controls.precio_menudeo.touched">
+                Precio inválido.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <hr class="my-1" />
+
+        <!-- Precio mínimo -->
+        <div>
+          <label class="form-label fw-semibold">Precio mínimo</label>
           <div class="input-group">
             <span class="input-group-text">$</span>
             <input type="number" class="form-control" formControlName="precio_min"
               min="0" step="0.01" placeholder="0.00" />
           </div>
+          <div class="form-text text-muted small">Precio de piso, no se puede vender por debajo de este.</div>
           <div class="form-text text-danger"
             *ngIf="editForm.controls.precio_min.invalid && editForm.controls.precio_min.touched">
-            Ingresa un precio mínimo válido.
+            Precio mínimo inválido.
           </div>
-        </div>
-
-        <div class="alert alert-warning py-2 small mb-0"
-          *ngIf="editForm.hasError('precioMinMayor')">
-          El precio mínimo no puede ser mayor al precio de venta.
         </div>
 
       </form>

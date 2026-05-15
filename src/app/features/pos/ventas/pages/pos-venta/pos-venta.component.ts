@@ -59,6 +59,7 @@ export class PosVentaComponent {
 
   private precioDraft = new Map<string, string>();
   private cantidadDraft = new Map<string, string>();
+  private lineKey = 0;
 
   // UI
   loadingLotes = signal(false);
@@ -118,6 +119,7 @@ export class PosVentaComponent {
   kbActiveKey = signal<string | null>(null);   // key del CartLine activo
   kbValue = signal<string>('');            // valor en edición
   kbMode = signal<'qty' | 'price'>('qty');
+  kbCapture = signal<'qty' | 'amount'>('qty'); // toggle cantidad vs importe
 
   // Form
   form = this.fb.group({
@@ -212,9 +214,6 @@ export class PosVentaComponent {
   lastVentaId = signal<number | null>(null);
   printing = signal(false);
   showPrintDialog = signal(false);
-  showPrinterPicker = signal(false);
-  printers = signal<string[]>([]);
-  loadingPrinters = signal(false);
 
   printCopies = signal<number>(Number(localStorage.getItem('pos_print_copies')) || 0);
 
@@ -573,8 +572,14 @@ export class PosVentaComponent {
   // ====== Teclado numérico ======
   openKb(key: string, currentValue: number) {
     this.kbMode.set('qty');
+    this.kbCapture.set('qty');
     this.kbActiveKey.set(key);
     this.kbValue.set(String(currentValue));
+  }
+
+  onKbCaptureChange(mode: 'qty' | 'amount') {
+    this.kbCapture.set(mode);
+    this.kbValue.set('');
   }
 
   openKbPrice(key: string, currentPrice: number) {
@@ -593,6 +598,21 @@ export class PosVentaComponent {
       if (this.kbMode() === 'price') {
         this.setPrecio(key, val || '0');
         this.commitPrecio(key);
+      } else if (this.kbCapture() === 'amount') {
+        const amount = parseFloat(val) || 0;
+        if (amount > 0) {
+          const line = this.cart().find(x => x.key === key);
+          if (line) {
+            const { qty, precio } = this.resolveAmount(line.lote, amount);
+            if (qty > 0) {
+              this.cart.set(
+                this.cart().map(x =>
+                  x.key === key ? { ...x, cantidad: qty, precio } : x
+                )
+              );
+            }
+          }
+        }
       } else {
         this.setQty(key, val || '0');
         this.commitQty(key);
@@ -607,29 +627,50 @@ export class PosVentaComponent {
 
   // ====== Ticket ======
 
-  /** Devuelve el precio que corresponde según la cantidad: mayoreo si cantidad >= unidades_mayoreo, normal en otro caso. */
-  private resolvePrice(lote: LoteDisponible, cantidad: number): number {
-    const mayoreo = this.toNumber(lote.articulo?.unidades_mayoreo ?? 0);
-    if (mayoreo > 0 && cantidad >= mayoreo) {
-      return this.toNumber(lote.precio_min);
+  /** A partir de un importe, determina la cantidad y el precio aplicando la política. */
+  private resolveAmount(lote: LoteDisponible, amount: number): { qty: number; precio: number } {
+    const precioNormal = this.toNumber(lote.precio);
+
+    const cantMenudeo  = this.toNumber(lote.cant_menudeo);
+    const precioMenudeo = this.toNumber(lote.precio_menudeo);
+    if (cantMenudeo > 0 && precioMenudeo > 0) {
+      const qty = amount / precioMenudeo;
+      if (qty < cantMenudeo) return { qty: this.round3(qty), precio: precioMenudeo };
     }
+
+    const cantMayoreo  = this.toNumber(lote.cant_mayoreo);
+    const precioMayoreo = this.toNumber(lote.precio_mayoreo);
+    if (cantMayoreo > 0 && precioMayoreo > 0) {
+      const qty = amount / precioMayoreo;
+      if (qty > cantMayoreo) return { qty: this.round3(qty), precio: precioMayoreo };
+    }
+
+    return { qty: this.round3(precioNormal > 0 ? amount / precioNormal : 0), precio: precioNormal };
+  }
+
+  /** Aplica la política de precios según cantidad:
+   *  - menudeo:  cantidad <  cant_menudeo  → precio_menudeo
+   *  - mayoreo:  cantidad >  cant_mayoreo  → precio_mayoreo
+   *  - normal:   cualquier otro caso       → precio
+   */
+  private resolvePrice(lote: LoteDisponible, cantidad: number): number {
+    const cantMenudeo = this.toNumber(lote.cant_menudeo);
+    if (cantMenudeo > 0 && cantidad < cantMenudeo) {
+      const pm = this.toNumber(lote.precio_menudeo);
+      if (pm > 0) return pm;
+    }
+
+    const cantMayoreo = this.toNumber(lote.cant_mayoreo);
+    if (cantMayoreo > 0 && cantidad > cantMayoreo) {
+      const pm = this.toNumber(lote.precio_mayoreo);
+      if (pm > 0) return pm;
+    }
+
     return this.toNumber(lote.precio);
   }
 
   addLote(l: LoteDisponible) {
-    const key = String(l.id);
-    const existing = this.cart().find((x) => x.key === key);
-
-    if (existing) {
-      const newCantidad = existing.cantidad + 1;
-      const newPrecio = this.resolvePrice(l, newCantidad);
-      this.cart.set(
-        this.cart().map((x) =>
-          x.key === key ? { ...x, cantidad: newCantidad, precio: newPrecio } : x,
-        ),
-      );      
-      return;
-    }
+    const key = `${l.id}_${++this.lineKey}`;
 
     const line: CartLine = {
       key,
@@ -969,12 +1010,6 @@ export class PosVentaComponent {
   printTicket(ventaId: number | null = this.lastVentaId(), copies = 0) {
     if (!ventaId) return;
 
-    // Si no hay impresora guardada, abrir el selector primero
-    if (!this.printerSvc.printerName()) {
-      this.openPrinterPicker(ventaId);
-      return;
-    }
-
     this.printing.set(true);
 
     this.ventasSvc.getTicket(ventaId, 48).subscribe({
@@ -986,18 +1021,10 @@ export class PosVentaComponent {
           }
           this.banner.set({ type: 'success', text: 'Ticket enviado a la impresora.' });
         } catch (err: any) {
-          if (err?.message === 'NO_PRINTER') {
-            this.openPrinterPicker(ventaId);
-          } else {
-            const msg: string = err?.message ?? '';
-            const qzOffline = msg.includes('Unable to establish') || msg.includes('websocket');
-            this.banner.set({
-              type: 'danger',
-              text: qzOffline
-                ? 'QZ Tray no está corriendo. Ábrelo e intenta de nuevo.'
-                : (msg || 'Error al enviar a la impresora.'),
-            });
-          }
+          this.banner.set({
+            type: 'danger',
+            text: err?.message ?? 'Error al enviar a la impresora.',
+          });
         } finally {
           this.printing.set(false);
         }
@@ -1007,37 +1034,6 @@ export class PosVentaComponent {
         this.banner.set({ type: 'danger', text: 'Error al obtener el ticket del servidor.' });
       },
     });
-  }
-
-  openPrinterPicker(ventaId?: number | null) {
-    this.loadingPrinters.set(true);
-    this.showPrinterPicker.set(true);
-
-    this.printerSvc.getPrinters().then((list) => {
-      this.printers.set(list);
-      this.loadingPrinters.set(false);
-    }).catch((err: any) => {
-      this.loadingPrinters.set(false);
-      this.showPrinterPicker.set(false);
-      const msg: string = err?.message ?? '';
-      const qzOffline = msg.includes('Unable to establish') || msg.includes('websocket');
-      this.banner.set({
-        type: 'danger',
-        text: qzOffline
-          ? 'QZ Tray no está corriendo. Ábrelo e intenta de nuevo.'
-          : (msg || 'No se pudo conectar a QZ Tray.'),
-      });
-    });
-  }
-
-  selectPrinter(name: string, ventaId: number | null = this.lastVentaId()) {
-    this.printerSvc.setPrinter(name);
-    this.showPrinterPicker.set(false);
-    if (ventaId) this.printTicket(ventaId);
-  }
-
-  closePrinterPicker() {
-    this.showPrinterPicker.set(false);
   }
 
   confirmPrint() {
@@ -1103,6 +1099,10 @@ export class PosVentaComponent {
 
   private round2(v: number): number {
     return Math.round(v * 100) / 100;
+  }
+
+  private round3(v: number): number {
+    return Math.round(v * 1000) / 1000;
   }
 
   backendError(field: string): string | null {

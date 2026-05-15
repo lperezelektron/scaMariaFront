@@ -15,7 +15,7 @@ import {
 import { AlmacenesService } from '../../../settings/pages/almacenes/data/almacenes.service';
 import { Almacen, InventarioItem } from '../../../settings/pages/almacenes/data/almacenes.models';
 import { CategoriasService } from '../../../catalog/articulos/data/categorias.service';
-import { InventarioService} from '../../../../../app/features/reporte/data/inventario.service'
+import { InventarioService } from '../../../../../app/features/reporte/data/inventario.service';
 import { UserStorageService } from '../../../../core/storage/user-storage.service';
 
 @Component({
@@ -64,27 +64,22 @@ export class PreciosComponent {
   editItem         = signal<InventarioItem | null>(null);
   saving           = signal(false);
 
-  editForm = new FormGroup(
-    {
-      precio:     new FormControl<number | null>(null, [Validators.required, Validators.min(0)]),
-      precio_min: new FormControl<number | null>(null, [Validators.required, Validators.min(0)]),
-    },
-    {
-      validators: (g) => {
-        const precio    = g.get('precio')?.value;
-        const precioMin = g.get('precio_min')?.value;
-        if (precio != null && precioMin != null && precioMin > precio) {
-          return { precioMinMayor: true };
-        }
-        return null;
-      },
-    }
-  );
+  editForm = new FormGroup({
+    precio:          new FormControl<number | null>(null, [Validators.required, Validators.min(0)]),
+    precio_mayoreo:  new FormControl<number | null>(null, [Validators.min(0)]),
+    cant_mayoreo:    new FormControl<number | null>(null, [Validators.min(0.001)]),
+    precio_menudeo:  new FormControl<number | null>(null, [Validators.min(0)]),
+    cant_menudeo:    new FormControl<number | null>(null, [Validators.min(0.001)]),
+    precio_min:      new FormControl<number | null>(null, [Validators.min(0)]),
+  });
 
   defaultColDef: ColDef = { sortable: true, resizable: true, filter: false };
 
   overlayNoRowsTemplate  = `<div class="ag-overlay-msg">No hay artículos para mostrar.</div>`;
   overlayLoadingTemplate = `<div class="ag-overlay-msg">Cargando...</div>`;
+
+  private fmt = (v: any) => v != null ? `$${Number(v).toFixed(2)}` : '-';
+  private fmtNum = (v: any) => v != null ? Number(v).toFixed(3) : '-';
 
   colDefs: ColDef<InventarioItem>[] = [
     {
@@ -115,7 +110,7 @@ export class PreciosComponent {
     {
       headerName: 'Existencia',
       field: 'existencia',
-      width: 120,
+      width: 110,
       type: 'rightAligned',
       valueFormatter: (p) => p.value != null ? Number(p.value).toFixed(2) : '-',
       cellStyle: (p) => Number(p.value) <= 10 ? { color: '#dc3545', fontWeight: 600 } : null,
@@ -123,35 +118,67 @@ export class PreciosComponent {
     {
       headerName: 'Unidad',
       valueGetter: (p) => p.data?.articulo?.unidad ?? '-',
-      width: 90,
+      width: 80,
     },
     {
       headerName: 'Precio',
       field: 'precio',
-      width: 120,
+      width: 110,
       type: 'rightAligned',
-      valueFormatter: (p) => p.value != null ? `$${Number(p.value).toFixed(2)}` : '-',
+      valueFormatter: (p) => this.fmt(p.value),
+    },
+    {
+      headerName: 'Mayoreo',
+      field: 'precio_mayoreo',
+      width: 110,
+      type: 'rightAligned',
+      valueFormatter: (p) => this.fmt(p.value),
+      headerTooltip: 'Precio de mayoreo',
+    },
+    {
+      headerName: 'Cant. May.',
+      field: 'cant_mayoreo',
+      width: 105,
+      type: 'rightAligned',
+      valueFormatter: (p) => this.fmtNum(p.value),
+      headerTooltip: 'Cantidad mínima para precio mayoreo',
+    },
+    {
+      headerName: 'Menudeo',
+      field: 'precio_menudeo',
+      width: 110,
+      type: 'rightAligned',
+      valueFormatter: (p) => this.fmt(p.value),
+      headerTooltip: 'Precio de menudeo',
+    },
+    {
+      headerName: 'Cant. Men.',
+      field: 'cant_menudeo',
+      width: 105,
+      type: 'rightAligned',
+      valueFormatter: (p) => this.fmtNum(p.value),
+      headerTooltip: 'Cantidad máxima para precio menudeo',
     },
     {
       headerName: 'Precio mín.',
       field: 'precio_min',
-      width: 120,
+      width: 110,
       type: 'rightAligned',
-      valueFormatter: (p) => p.value != null ? `$${Number(p.value).toFixed(2)}` : '-',
+      valueFormatter: (p) => this.fmt(p.value),
     },
     {
       headerName: 'Costo',
       field: 'costo',
       width: 110,
       type: 'rightAligned',
-      valueFormatter: (p) => p.value != null ? `$${Number(p.value).toFixed(2)}` : '-',
+      valueFormatter: (p) => this.fmt(p.value),
     },
     {
       headerName: 'Empaque',
       field: 'empaque',
-      width: 110,
+      width: 100,
       type: 'rightAligned',
-      valueFormatter: (p) => p.value != null ? Number(p.value).toFixed(2) : '-',
+      valueFormatter: (p) => this.fmtNum(p.value),
     },
   ];
 
@@ -240,11 +267,18 @@ export class PreciosComponent {
     }
   }
 
-  // ── Modal edición ──────────────────────────────────────────
+  // ── Modal edición ───────────────────────────────────────────
 
   openEdit(item: InventarioItem) {
     this.editItem.set(item);
-    this.editForm.reset({ precio: item.precio ?? null, precio_min: item.precio_min ?? null });
+    this.editForm.reset({
+      precio:         item.precio         ?? null,
+      precio_mayoreo: item.precio_mayoreo ?? null,
+      cant_mayoreo:   item.cant_mayoreo   ?? null,
+      precio_menudeo: item.precio_menudeo ?? null,
+      cant_menudeo:   item.cant_menudeo   ?? null,
+      precio_min:     item.precio_min     ?? null,
+    });
     this.editModalVisible.set(true);
   }
 
@@ -257,16 +291,15 @@ export class PreciosComponent {
     const item = this.editItem();
     if (!item) return;
 
-    const { precio, precio_min } = this.editForm.getRawValue();
+    const raw = this.editForm.getRawValue();
     this.saving.set(true);
 
-    this.inventarioSvc.updatePrecios(item.id, { precio: precio!, precio_min: precio_min! }).subscribe({
+    this.inventarioSvc.updatePrecios(item.id, raw).subscribe({
       next: () => {
         this.saving.set(false);
         this.editModalVisible.set(false);
-        // actualizar la fila localmente para no recargar todo
         this.allRows.update(rows =>
-          rows.map(r => r.id === item.id ? { ...r, precio: precio!, precio_min: precio_min! } : r)
+          rows.map(r => r.id === item.id ? { ...r, ...raw } : r)
         );
         this.banner.set({ type: 'success', text: 'Precios actualizados correctamente.' });
       },

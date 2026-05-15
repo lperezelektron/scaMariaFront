@@ -14,10 +14,14 @@ export class NumericKeyboardComponent implements OnInit {
     @Output() confirm = new EventEmitter<string>();
     @Output() cancel = new EventEmitter<void>();
 
+    @Input() captureMode: 'qty' | 'amount' = 'qty';
+    @Output() captureModeChange = new EventEmitter<'qty' | 'amount'>();
+    @Input() showModeToggle = false;
+
     private fresh = true;
 
     ngOnInit() {
-        this.fresh = true; // solo al abrir, no en cada tecla
+        this.fresh = true;
     }
 
     press(key: string) {
@@ -41,6 +45,13 @@ export class NumericKeyboardComponent implements OnInit {
             return;
         }
         this.valueChange.emit(this.value + key);
+    }
+
+    setMode(mode: 'qty' | 'amount') {
+        if (this.captureMode === mode) return;
+        this.captureModeChange.emit(mode);
+        this.valueChange.emit('');
+        this.fresh = true;
     }
 
     onConfirm() {

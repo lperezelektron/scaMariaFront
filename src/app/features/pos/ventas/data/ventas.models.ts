@@ -38,6 +38,10 @@ export interface LoteDisponible {
     existencia: number | string;
 
     precio: number | string;
+    precio_mayoreo: number | string | null;
+    cant_mayoreo: number | string | null;
+    precio_menudeo: number | string | null;
+    cant_menudeo: number | string | null;
     precio_min: number | string;
     costo: number | string;
     empaque: number | string;
