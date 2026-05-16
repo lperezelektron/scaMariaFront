@@ -74,7 +74,7 @@
             </button>
 
             <div class="search-row">
-              <input class="form-control form-control-sm" [value]="articuloSearch()"
+              <input #searchInput class="form-control form-control-sm" [value]="articuloSearch()"
                 (input)="onGridSearch($any($event.target).value)" placeholder="Buscar por nombre..." autocomplete="off"
                 spellcheck="false" />
             </div>

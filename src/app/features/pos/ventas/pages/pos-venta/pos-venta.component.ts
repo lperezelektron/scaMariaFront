@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, computed, inject, signal, HostListener, effect } from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal, HostListener, effect, ViewChild, ElementRef } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { debounceTime, distinctUntilChanged, Subject, interval } from 'rxjs';
@@ -56,6 +56,8 @@ export class PosVentaComponent {
   private formasPagoSvc = inject(FormasPagoService);
   private almacenesSvc = inject(AlmacenesService);
   private empleadosSvc = inject(EmpleadosService);
+
+  @ViewChild('searchInput') private searchInput!: ElementRef<HTMLInputElement>;
 
   private precioDraft = new Map<string, string>();
   private cantidadDraft = new Map<string, string>();
@@ -375,6 +377,7 @@ export class PosVentaComponent {
     if (this.categoriaId() === id) return; // evitar reset si es la misma categoría
     this.categoriaId.set(id);
     this.resetGridAndLoad();
+    this.focusSearch();
   }
 
   resetGridAndLoad() {
@@ -472,6 +475,7 @@ export class PosVentaComponent {
 
   closeLotesModal() {
     this.showLotesModal.set(false);
+    this.focusSearch();
   }
 
   selectLote(l: LoteDisponible) {
@@ -614,10 +618,12 @@ export class PosVentaComponent {
       }
     }
     this.kbActiveKey.set(null);
+    this.focusSearch();
   }
 
   onKbCancel() {
     this.kbActiveKey.set(null);
+    this.focusSearch();
   }
 
   // ====== Ticket ======
@@ -1087,6 +1093,15 @@ export class PosVentaComponent {
     return n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
+  focusSearch() {
+    setTimeout(() => {
+      const el = this.searchInput?.nativeElement;
+      if (!el) return;
+      el.focus();
+      if (el.value) el.select();
+    }, 0);
+  }
+
   private toNumber(v: any): number {
     const n = typeof v === 'string' ? Number(v) : Number(v ?? 0);
     return Number.isFinite(n) ? n : 0;
@@ -1137,5 +1152,6 @@ export class PosVentaComponent {
     this.pendingConfirmAction = null;
     this.confirmOpen.set(false);
     action?.();
+    this.focusSearch();
   }
 }
