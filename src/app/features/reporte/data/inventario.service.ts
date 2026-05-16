@@ -45,6 +45,24 @@ export class InventarioService {
     return this.http.patch(`${this.base}/api/inventario/${id}/precios`, payload);
   }
 
+  importarPrecios(payload: {
+    almacen_id: number;
+    registros: {
+      inventario_id?: number | null;
+      articulo_id: number;
+      precio?: number | null;
+      precio_mayoreo?: number | null;
+      cant_mayoreo?: number | null;
+      precio_menudeo?: number | null;
+      cant_menudeo?: number | null;
+      precio_min?: number | null;
+      costo?: number | null;
+      empaque?: number | null;
+    }[];
+  }): Observable<any> {
+    return this.http.post(`${this.base}/api/inventario/importar-precios`, payload);
+  }
+
   almacenes(): Observable<Almacen[]> {
     return this.http.get<Almacen[]>(`${this.base}/api/almacenes`);
   }

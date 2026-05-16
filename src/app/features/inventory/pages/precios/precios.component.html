@@ -13,8 +13,8 @@
     {{ b.text }}
   </div>
 
-  <!-- Selector de almacén + Refrescar -->
-  <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
+  <!-- Selector de almacén + acciones -->
+  <div class="d-flex align-items-center justify-content-between gap-2 mb-3 flex-wrap">
     <div class="d-flex align-items-center gap-2">
       <label class="form-label mb-0 fw-semibold text-nowrap">Almacén:</label>
       <select class="form-select" style="max-width: 280px;" [value]="almacenId() ?? ''"
@@ -23,10 +23,21 @@
         <option *ngFor="let a of almacenes()" [value]="a.id">{{ a.descripcion }}</option>
       </select>
     </div>
-    <button type="button" class="btn btn-outline-secondary" (click)="reload()"
-      [disabled]="almacenId() === null">
-      Refrescar
-    </button>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <button type="button" class="btn btn-outline-secondary" (click)="reload()"
+        [disabled]="almacenId() === null">
+        Refrescar
+      </button>
+      <button type="button" class="btn btn-outline-primary" (click)="downloadPlantilla()"
+        [disabled]="almacenId() === null || allRows().length === 0">
+        Descargar plantilla
+      </button>
+      <button type="button" class="btn btn-outline-success" (click)="openImportPrecios()"
+        [disabled]="almacenId() === null || importing()">
+        {{ importing() ? 'Importando...' : 'Importar precios' }}
+      </button>
+      <input type="file" #importInput hidden accept=".xlsx,.xls" (change)="onImportFile($event)" />
+    </div>
   </div>
 
   <!-- Sin almacén seleccionado -->

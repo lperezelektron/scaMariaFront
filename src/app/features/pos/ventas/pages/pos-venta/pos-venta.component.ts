@@ -195,16 +195,10 @@ export class PosVentaComponent {
     const diasCredito = this.form.value.dias_credito;
     if (credito && (!diasCredito || diasCredito <= 0)) return false;
 
-    // Validación de líneas del carrito (solo stock, precio no editable)
+    // Validación de líneas del carrito
     const cart = this.cart();
     for (let i = 0; i < cartLength; i++) {
-      const line = cart[i];
-      const cantidad = line.cantidad;
-      const existencia = +line.lote.existencia || 0;
-
-      if (cantidad <= 0 || cantidad > existencia) {
-        return false;
-      }
+      if (cart[i].cantidad <= 0) return false;
     }
 
     return true;
@@ -216,6 +210,7 @@ export class PosVentaComponent {
   showPrintDialog = signal(false);
 
   printCopies = signal<number>(Number(localStorage.getItem('pos_print_copies')) || 0);
+  tileSize = signal<number>(Number(localStorage.getItem('pos_tile_size')) || 150);
 
   confirmOpen = signal(false);
   confirmTitle = signal('Confirmar acción');
@@ -460,7 +455,7 @@ export class PosVentaComponent {
   }
 
   imgSrc(a: any): string {
-    return `http://${a.imagen_url}`
+    return `${a.imagen_url}`
   }
 
   selectArticulo(a: any) {
@@ -509,7 +504,7 @@ export class PosVentaComponent {
           if (rows?.length) {
             this.selectLote(rows[0]);
           } else {
-            this.banner.set({ type: 'danger', text: 'Sin existencia disponible para este artículo.' });
+            this.banner.set({ type: 'danger', text: 'Este artículo no tiene registros de inventario en este almacén.' });
           }
         },
         error: (err) => {
@@ -736,13 +731,6 @@ export class PosVentaComponent {
     );
   }
 
-  private maxStock(line: CartLine): number {
-    return +line.lote.existencia || 0;
-  }
-
-  isOverStock(line: CartLine): boolean {
-    return line.cantidad > (+line.lote.existencia || 0);
-  }
 
   isBelowMinPrice(line: CartLine): boolean {
     return line.precio < (+line.lote.precio_min || 0);
@@ -979,18 +967,20 @@ export class PosVentaComponent {
         this.selectedArticulo.set(null);
 
         this.clientesFound.set([]);
-        this.clienteNombreCtrl.setValue('', { emitEvent: false });
         this.clienteQuery.set('');
         this.clienteDropdownOpen.set(false);
 
         this.form.reset({
           fecha: this.today(),
           almacen_id: keepAlmacen,
-          cliente_id: null,
+          cliente_id: environment.clienteMostrador,
           f_pago_id: keepPago,
           credito: false,
           dias_credito: null,
         });
+
+        const clienteDefault = this.clientes().find(c => c.id === environment.clienteMostrador);
+        this.clienteNombreCtrl.setValue(clienteDefault?.nombre ?? '', { emitEvent: false });
       },
       error: (err) => {
         this.saving.set(false);
@@ -1034,6 +1024,11 @@ export class PosVentaComponent {
         this.banner.set({ type: 'danger', text: 'Error al obtener el ticket del servidor.' });
       },
     });
+  }
+
+  onTileSizeChange(v: number) {
+    this.tileSize.set(v);
+    localStorage.setItem('pos_tile_size', String(v));
   }
 
   confirmPrint() {

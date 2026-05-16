@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, ElementRef, signal, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AgGridAngular } from 'ag-grid-angular';
@@ -11,6 +11,7 @@ import {
   ModalFooterComponent,
   ModalHeaderComponent,
 } from '@coreui/angular';
+import * as XLSX from 'xlsx';
 
 import { AlmacenesService } from '../../../settings/pages/almacenes/data/almacenes.service';
 import { Almacen, InventarioItem } from '../../../settings/pages/almacenes/data/almacenes.models';
@@ -35,6 +36,7 @@ import { UserStorageService } from '../../../../core/storage/user-storage.servic
   styleUrl: './precios.component.scss',
 })
 export class PreciosComponent {
+  @ViewChild('importInput') importInput!: ElementRef<HTMLInputElement>;
   private gridApi?: GridApi;
 
   // almacén
@@ -49,7 +51,7 @@ export class PreciosComponent {
   search = signal('');
 
   // data
-  private allRows = signal<InventarioItem[]>([]);
+  allRows = signal<InventarioItem[]>([]);
   filteredRows = computed(() => {
     const cat = this.categoriaId();
     return cat === 'all'
@@ -58,6 +60,7 @@ export class PreciosComponent {
   });
 
   banner = signal<{ type: 'success' | 'danger'; text: string } | null>(null);
+  importing = signal(false);
 
   // modal edición
   editModalVisible = signal(false);
@@ -311,6 +314,102 @@ export class PreciosComponent {
         });
       },
     });
+  }
+
+  // ── Plantilla Excel ────────────────────────────────────────
+
+  downloadPlantilla() {
+    const almacenDesc = this.almacenes().find(a => a.id === this.almacenId())?.descripcion ?? 'almacen';
+    const instrRow = ['NO modificar inventario_id ni articulo_id — se usan para identificar el registro.'];
+    const headers = [
+      'inventario_id', 'articulo_id', 'articulo', 'variedad', 'unidad',
+      'existencia', 'precio', 'precio_mayoreo', 'cant_mayoreo',
+      'precio_menudeo', 'cant_menudeo', 'precio_min', 'costo', 'empaque',
+    ];
+    const dataRows = this.allRows().map(r => [
+      r.id,
+      r.articulo_id,
+      r.articulo?.nombre ?? '',
+      r.variedad ?? '',
+      r.articulo?.unidad ?? '',
+      r.existencia,
+      r.precio ?? '',
+      r.precio_mayoreo ?? '',
+      r.cant_mayoreo ?? '',
+      r.precio_menudeo ?? '',
+      r.cant_menudeo ?? '',
+      r.precio_min ?? '',
+      r.costo ?? '',
+      r.empaque ?? '',
+    ]);
+
+    const ws = XLSX.utils.aoa_to_sheet([instrRow, headers, ...dataRows]);
+    ws['!cols'] = [
+      { wch: 14 }, { wch: 12 }, { wch: 35 }, { wch: 15 }, { wch: 8 },
+      { wch: 12 }, { wch: 10 }, { wch: 14 }, { wch: 12 },
+      { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 10 },
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Plantilla_Precios');
+    XLSX.writeFile(wb, `plantilla_precios_${almacenDesc}.xlsx`);
+  }
+
+  openImportPrecios() {
+    this.importInput.nativeElement.value = '';
+    this.importInput.nativeElement.click();
+  }
+
+  onImportFile(event: any) {
+    const file: File | undefined = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+      const ws = wb.Sheets['Plantilla_Precios'];
+      if (!ws) {
+        this.banner.set({ type: 'danger', text: 'La hoja "Plantilla_Precios" no existe en el archivo.' });
+        return;
+      }
+
+      const json: any[] = XLSX.utils.sheet_to_json(ws, { defval: '', range: 1 });
+      const toNum = (v: any) => (v !== '' && v !== null && v !== undefined) ? Number(v) : null;
+
+      const registros = json
+        .filter(r => r.articulo_id)
+        .map(r => ({
+          inventario_id:  r.inventario_id || null,
+          articulo_id:    Number(r.articulo_id),
+          precio:         toNum(r.precio),
+          precio_mayoreo: toNum(r.precio_mayoreo),
+          cant_mayoreo:   toNum(r.cant_mayoreo),
+          precio_menudeo: toNum(r.precio_menudeo),
+          cant_menudeo:   toNum(r.cant_menudeo),
+          precio_min:     toNum(r.precio_min),
+          costo:          toNum(r.costo),
+          empaque:        toNum(r.empaque),
+        }));
+
+      if (!registros.length) {
+        this.banner.set({ type: 'danger', text: 'No se encontraron registros válidos en la plantilla.' });
+        return;
+      }
+
+      this.importing.set(true);
+      this.inventarioSvc.importarPrecios({ almacen_id: this.almacenId()!, registros }).subscribe({
+        next: (res: any) => {
+          this.importing.set(false);
+          const n = res?.actualizados ?? registros.length;
+          this.banner.set({ type: 'success', text: `Importación completada: ${n} registros procesados.` });
+          this.reload();
+        },
+        error: (err: any) => {
+          this.importing.set(false);
+          this.banner.set({ type: 'danger', text: err?.error?.message ?? 'Error al importar los precios.' });
+        },
+      });
+    };
+    reader.readAsArrayBuffer(file);
   }
 
   trackByCatId(_: number, c: { id: number }) { return c.id; }
