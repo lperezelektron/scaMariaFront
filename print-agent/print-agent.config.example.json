@@ -1,4 +1,4 @@
 {
   "httpPort": 8183,
-  "printerTarget": "USB001"
+  "printerTarget": "PRINTER:Nombre exacto de la impresora en Windows"
 }

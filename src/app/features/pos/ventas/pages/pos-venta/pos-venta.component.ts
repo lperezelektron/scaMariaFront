@@ -33,6 +33,7 @@ type CartLine = {
   cantidad: number;
   precio: number;
   impuestos: number; // por ahora 0
+  importe?: number;  // importe capturado directamente; cuando está presente se usa en lugar de cantidad × precio
 };
 
 @Component({
@@ -142,7 +143,7 @@ export class PosVentaComponent {
     const cart = this.cart();
     let sum = 0;
     for (let i = 0; i < cart.length; i++) {
-      sum += cart[i].cantidad * cart[i].precio;
+      sum += cart[i].importe ?? (cart[i].cantidad * cart[i].precio);
     }
     return sum;
   });
@@ -606,7 +607,7 @@ export class PosVentaComponent {
             if (qty > 0) {
               this.cart.set(
                 this.cart().map(x =>
-                  x.key === key ? { ...x, cantidad: qty, precio } : x
+                  x.key === key ? { ...x, cantidad: qty, precio, importe: amount } : x
                 )
               );
             }
@@ -732,7 +733,7 @@ export class PosVentaComponent {
     this.cart.set(
       this.cart().map((x) => {
         if (x.key !== key) return x;
-        return { ...x, cantidad: this.round2(next), precio: this.resolvePrice(x.lote, next) };
+        return { ...x, cantidad: this.round2(next), precio: this.resolvePrice(x.lote, next), importe: undefined };
       }),
     );
   }
@@ -792,7 +793,7 @@ export class PosVentaComponent {
       this.cart.set(
         this.cart().map((x) => {
           if (x.key !== key) return x;
-          return { ...x, cantidad: safe, precio: this.resolvePrice(x.lote, safe) };
+          return { ...x, cantidad: safe, precio: this.resolvePrice(x.lote, safe), importe: undefined };
         }),
       );
     }
@@ -804,7 +805,7 @@ export class PosVentaComponent {
 
     const draft = this.cantidadDraft.get(key);
     if (draft === undefined) {
-      this.cart.set(this.cart().map((x) => (x.key === key ? { ...x, cantidad: this.round2(Math.max(0, +x.cantidad || 0)) } : x)));
+      this.cart.set(this.cart().map((x) => (x.key === key ? { ...x, cantidad: this.round2(Math.max(0, +x.cantidad || 0)), importe: undefined } : x)));
       return;
     }
 
@@ -824,7 +825,7 @@ export class PosVentaComponent {
       this.cart.set(
         this.cart().map((x) => {
           if (x.key !== key) return x;
-          return { ...x, cantidad: final, precio: this.resolvePrice(x.lote, final) };
+          return { ...x, cantidad: final, precio: this.resolvePrice(x.lote, final), importe: undefined };
         }),
       );
     }
@@ -866,7 +867,7 @@ export class PosVentaComponent {
 
     // Actualiza el precio numérico SIN redondear (para no “formatear” mientras escribe)
     this.cart.set(
-      this.cart().map((x) => (x.key === key ? { ...x, precio: safe } : x)),
+      this.cart().map((x) => (x.key === key ? { ...x, precio: safe, importe: undefined } : x)),
     );
   }
 
@@ -877,7 +878,7 @@ export class PosVentaComponent {
     const draft = this.precioDraft.get(key);
     // si no hay draft, igual aseguramos round2 al valor actual
     if (draft === undefined) {
-      this.cart.set(this.cart().map((x) => (x.key === key ? { ...x, precio: this.round2(Math.max(0, +x.precio || 0)) } : x)));
+      this.cart.set(this.cart().map((x) => (x.key === key ? { ...x, precio: this.round2(Math.max(0, +x.precio || 0)), importe: undefined } : x)));
       return;
     }
 
@@ -895,13 +896,18 @@ export class PosVentaComponent {
     this.precioDraft.delete(key);
 
     this.cart.set(
-      this.cart().map((x) => (x.key === key ? { ...x, precio: final } : x)),
+      this.cart().map((x) => (x.key === key ? { ...x, precio: final, importe: undefined } : x)),
     );
   }
 
   precioView(key: string, fallback: number) {
     const d = this.precioDraft.get(key);
     return d !== undefined ? d : String(fallback ?? 0);
+  }
+
+  /** Total de línea: usa el importe capturado si existe, si no calcula cantidad × precio. */
+  lineTotal(line: CartLine): number {
+    return line.importe ?? (line.cantidad * line.precio);
   }
 
   // TrackBy para evitar re-render completo del ngFor
@@ -936,7 +942,8 @@ export class PosVentaComponent {
       lote_id: x.lote_id,
       cantidad: x.cantidad,
       empaque: 0,
-      precio: x.precio,
+      // Cuando se capturó por importe, ajustar precio para que cantidad × precio = importe exacto
+      precio: x.importe ? +(x.importe / x.cantidad).toFixed(6) : x.precio,
       impuestos: 0,
     }));
 

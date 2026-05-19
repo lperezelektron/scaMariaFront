@@ -27,6 +27,11 @@ export class AlmacenFormComponent {
   fieldErrors = signal<FieldErrors>({});
   valorInventario = signal<number | null>(null);
 
+  // Imagen
+  imagenActual  = signal(false);
+  imagenFile    = signal<File | null>(null);
+  imagenPreview = signal<string | null>(null);
+
   // Tabs
   tab = signal<'general' | 'inventario'>('general');
 
@@ -117,9 +122,6 @@ export class AlmacenFormComponent {
 
     this.almacenesSvc.get(this.almacenId).subscribe({
       next: (res: any) => {
-        console.log('RAW response:', res);
-        console.log('Keys res:', Object.keys(res ?? {}));
-        console.log('res.almacen:', res?.almacen);
         const a = res?.almacen ?? res;
 
         this.form.patchValue({
@@ -129,6 +131,8 @@ export class AlmacenFormComponent {
           telefono: a?.telefono ?? '',
           activo: !!a?.activo,
         });
+
+        this.imagenActual.set(!!a?.imagen);
 
         this.valorInventario.set(
           typeof res?.valor_inventario === 'number'
@@ -193,8 +197,8 @@ export class AlmacenFormComponent {
 
     const req =
       this.mode === 'create'
-        ? this.almacenesSvc.create(payload)
-        : this.almacenesSvc.update(this.almacenId!, payload);
+        ? this.almacenesSvc.create(payload, this.imagenFile() ?? undefined)
+        : this.almacenesSvc.update(this.almacenId!, payload, this.imagenFile() ?? undefined);
 
     req.subscribe({
       next: () => {
@@ -220,6 +224,24 @@ export class AlmacenFormComponent {
     this.router.navigate(['/settings/almacenes'], {
       queryParams: this.route.snapshot.queryParams,
     });
+  }
+
+  // ---------- Imagen ----------
+  onFileChange(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0] ?? null;
+    this.imagenFile.set(file);
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => this.imagenPreview.set(e.target?.result as string);
+      reader.readAsDataURL(file);
+    } else {
+      this.imagenPreview.set(null);
+    }
+  }
+
+  removeImagen() {
+    this.imagenFile.set(null);
+    this.imagenPreview.set(null);
   }
 
   // ---------- Tabs ----------
