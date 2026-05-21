@@ -88,7 +88,8 @@
             <div class="art-grid" *ngIf="!gridLoading()"
               [style.grid-template-columns]="'repeat(auto-fill, minmax(' + tileSize() + 'px, 1fr))'">
               <button type="button" class="art-tile" *ngFor="let a of gridItems(); trackBy: trackByArticuloId"
-                (click)="selectArticulo(a)" [class.art-tile-image]="a.imagen_url" [class.art-tile-text]="!a.imagen_url">
+                (click)="selectArticulo(a)" (mouseenter)="prefetchLotes(a.id)"
+                [class.art-tile-image]="a.imagen_url" [class.art-tile-text]="!a.imagen_url">
 
                 <!-- Imagen si existe -->
                 <div class="img" *ngIf="a.imagen_url">

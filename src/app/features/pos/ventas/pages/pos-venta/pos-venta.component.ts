@@ -19,6 +19,7 @@ import { getTodayString } from '../../../../../shared/utils/date.utils';
 import { NumericKeyboardComponent } from '../../../../../shared/components/numeric-keyboard/numeric-keyboard.component';
 import { HorizontalResizeDirective } from '../../../../../shared/directives/horizontal-resize.directive';
 import { environment } from '../../../../../../enviroments/environment';
+import { HttpCacheService } from '../../../../../core/services/http-cache.service';
 
 
 type FieldErrors = Record<string, string[]>;
@@ -49,6 +50,7 @@ export class PosVentaComponent {
   private router = inject(Router);
 
   private ventasSvc = inject(VentasService);
+  private httpCache = inject(HttpCacheService);
   printerSvc = inject(PrinterService);
   private articulosSvc = inject(ArticulosService);
   private categoriasSvc = inject(CategoriasService);
@@ -63,6 +65,7 @@ export class PosVentaComponent {
   private precioDraft = new Map<string, string>();
   private cantidadDraft = new Map<string, string>();
   private lineKey = 0;
+  private prefetchInProgress = new Set<string>();
 
   // UI
   loadingLotes = signal(false);
@@ -472,6 +475,21 @@ export class PosVentaComponent {
     this.banner.set(null);
     this.selectedArticulo.set(a);
     this.loadLotes(a.id);
+  }
+
+  /** Precarga los lotes de un artículo en segundo plano al pasar el cursor.
+   *  El interceptor de caché almacena la respuesta; el clic siguiente es instantáneo. */
+  prefetchLotes(articuloId: number): void {
+    const almacenId = this.form.value.almacen_id;
+    if (!almacenId) return;
+
+    const key = `${almacenId}_${articuloId}`;
+    if (this.prefetchInProgress.has(key)) return;
+    this.prefetchInProgress.add(key);
+
+    this.ventasSvc
+      .lotesDisponibles({ almacen_id: almacenId, articulo_id: articuloId, variedad: null })
+      .subscribe({ error: () => {}, complete: () => this.prefetchInProgress.delete(key) });
   }
 
   closeLotesModal() {
@@ -940,10 +958,10 @@ export class PosVentaComponent {
     const detalles: VentaDetallePayload[] = this.cart().map((x) => ({
       articulo_id: x.articulo_id,
       lote_id: x.lote_id,
-      cantidad: x.cantidad,
+      // Cuando se capturó por importe, ajustar cantidad (6 dec) para que cantidad × precio ≈ importe; el precio siempre es el real
+      cantidad: x.importe ? +(x.importe / x.precio).toFixed(6) : x.cantidad,
       empaque: 0,
-      // Cuando se capturó por importe, ajustar precio para que cantidad × precio = importe exacto
-      precio: x.importe ? +(x.importe / x.cantidad).toFixed(6) : x.precio,
+      precio: x.precio,
       impuestos: 0,
     }));
 
@@ -966,6 +984,9 @@ export class PosVentaComponent {
     this.ventasSvc.store(payload).subscribe({
       next: (res) => {
         this.saving.set(false);
+        // Invalidar caché de lotes y existencias para que el siguiente clic muestre stock actualizado
+        this.httpCache.invalidate('lotes-disponibles');
+        this.httpCache.invalidate('con-existencia');
         const ventaId = res?.venta?.id ?? null;
         this.lastVentaId.set(ventaId);
         this.banner.set({ type: 'success', text: res?.message ?? 'Venta registrada.' });

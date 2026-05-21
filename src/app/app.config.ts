@@ -18,6 +18,7 @@ import {
   withInterceptorsFromDi,
 } from '@angular/common/http';
 import { authInterceptor } from './core/api/auth.interceptor';
+import { HttpCacheInterceptor } from './core/api/cache.interceptor';
 import { registerLocaleData } from '@angular/common';
 import localeMx from '@angular/common/locales/es-MX';
 
@@ -43,6 +44,7 @@ export const appConfig: ApplicationConfig = {
     provideAnimations(),
     provideHttpClient(withInterceptorsFromDi()),
     { provide: HTTP_INTERCEPTORS, useClass: authInterceptor, multi: true },
+    { provide: HTTP_INTERCEPTORS, useClass: HttpCacheInterceptor, multi: true },
     {provide: LOCALE_ID, useValue: 'es-MX'},
   ],
 };
