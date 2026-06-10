@@ -146,7 +146,7 @@ export class PosVentaComponent {
     const cart = this.cart();
     let sum = 0;
     for (let i = 0; i < cart.length; i++) {
-      sum += cart[i].importe ?? (cart[i].cantidad * cart[i].precio);
+      sum += Math.round(cart[i].importe ?? (cart[i].cantidad * cart[i].precio));
     }
     return sum;
   });
@@ -662,7 +662,7 @@ export class PosVentaComponent {
     const precioMayoreo = this.toNumber(lote.precio_mayoreo);
     if (cantMayoreo > 0 && precioMayoreo > 0) {
       const qty = amount / precioMayoreo;
-      if (qty > cantMayoreo) return { qty: this.round3(qty), precio: precioMayoreo };
+      if (qty >= cantMayoreo) return { qty: this.round3(qty), precio: precioMayoreo };
     }
 
     return { qty: this.round3(precioNormal > 0 ? amount / precioNormal : 0), precio: precioNormal };
@@ -681,7 +681,7 @@ export class PosVentaComponent {
     }
 
     const cantMayoreo = this.toNumber(lote.cant_mayoreo);
-    if (cantMayoreo > 0 && cantidad > cantMayoreo) {
+    if (cantMayoreo > 0 && cantidad >= cantMayoreo) {
       const pm = this.toNumber(lote.precio_mayoreo);
       if (pm > 0) return pm;
     }
@@ -923,9 +923,9 @@ export class PosVentaComponent {
     return d !== undefined ? d : String(fallback ?? 0);
   }
 
-  /** Total de línea: usa el importe capturado si existe, si no calcula cantidad × precio. */
+  /** Total de línea: usa el importe capturado si existe, si no calcula cantidad × precio. Redondeado a entero. */
   lineTotal(line: CartLine): number {
-    return line.importe ?? (line.cantidad * line.precio);
+    return Math.round(line.importe ?? (line.cantidad * line.precio));
   }
 
   // TrackBy para evitar re-render completo del ngFor

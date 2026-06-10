@@ -31,7 +31,7 @@ export interface VentaDetalle {
   cantidad: number;
   precio: number;
   impuestos?: number | null;
-  subtotal?: number | null;
+  importe?: number | null;
 
   articulo?: { id: number; nombre: string; nombre_corto?: string; unidad?: string | null } | null;
   lote?: {id: number; variedad?: string | null} | null;

@@ -74,7 +74,7 @@
           <span class="item-name">{{ d.articulo?.nombre_corto }} {{ d.lote?.variedad }}</span>
           <span class="item-qty">{{ d.cantidad | number:'1.0-3' }}</span>
           <span class="item-price">{{ d.precio | number:'1.2-2' }}</span>
-          <span class="item-sub">{{ subtotalDetalle(d.cantidad, d.precio) | number:'1.2-2' }}</span>
+          <span class="item-sub">{{ d.importe | number:'1.2-2' }}</span>
         </div>
       </ng-container>
       <ng-template #sinDetalle>
