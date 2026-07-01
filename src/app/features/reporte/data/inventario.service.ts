@@ -1,0 +1,69 @@
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { Almacen, InventarioRow, Paginated } from './inventario.models';
+import { environment } from '../../../../enviroments/environment';
+
+export interface InventarioQuery {
+  page: number;
+  per_page: number;
+  almacen_id?: number | null;
+  articulo_id?: number | null;
+  categoria_id?: number | null;
+  search?: string;
+  stock_bajo?: boolean;
+}
+
+@Injectable({ providedIn: 'root' })
+export class InventarioService {
+  private base = environment.apiBaseUrl;
+
+  constructor(private http: HttpClient) {}
+
+  list(q: InventarioQuery): Observable<Paginated<InventarioRow>> {
+    let params = new HttpParams()
+      .set('page', q.page)
+      .set('per_page', q.per_page);
+
+    if (q.almacen_id)   params = params.set('almacen_id', q.almacen_id);
+    if (q.articulo_id)  params = params.set('articulo_id', q.articulo_id);
+    if (q.categoria_id) params = params.set('categoria_id', q.categoria_id);
+    if (q.search)       params = params.set('search', q.search);
+    if (q.stock_bajo)   params = params.set('stock_bajo', '1');
+
+    return this.http.get<Paginated<InventarioRow>>(`${this.base}/api/inventario`, { params });
+  }
+
+  updatePrecios(id: number, payload: {
+    precio?: number | null;
+    precio_mayoreo?: number | null;
+    cant_mayoreo?: number | null;
+    precio_menudeo?: number | null;
+    cant_menudeo?: number | null;
+    precio_min?: number | null;
+  }): Observable<any> {
+    return this.http.patch(`${this.base}/api/inventario/${id}/precios`, payload);
+  }
+
+  importarPrecios(payload: {
+    almacen_id: number;
+    registros: {
+      inventario_id?: number | null;
+      articulo_id: number;
+      precio?: number | null;
+      precio_mayoreo?: number | null;
+      cant_mayoreo?: number | null;
+      precio_menudeo?: number | null;
+      cant_menudeo?: number | null;
+      precio_min?: number | null;
+      costo?: number | null;
+      empaque?: number | null;
+    }[];
+  }): Observable<any> {
+    return this.http.post(`${this.base}/api/inventario/importar-precios`, payload);
+  }
+
+  almacenes(): Observable<Almacen[]> {
+    return this.http.get<Almacen[]>(`${this.base}/api/almacenes`);
+  }
+}

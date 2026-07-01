@@ -1,0 +1,75 @@
+<div class="crud-page">
+
+  <div class="crud-header">
+    <div class="crud-title">
+      <h2>Inventario</h2>
+      <small>{{ total() }} registros</small>
+    </div>
+    <div class="crud-actions">
+      <button type="button" class="btn btn-outline-secondary" (click)="reload()">
+        Refrescar
+      </button>
+    </div>
+  </div>
+
+  <!-- Banner -->
+  <div *ngIf="banner() as b" class="alert alert-danger">{{ b.text }}</div>
+
+  <!-- Toolbar -->
+  <div class="crud-toolbar">
+    <input
+      type="text"
+      class="form-control crud-search"
+      placeholder="Buscar artículo..."
+      [value]="search()"
+      (input)="onSearch($any($event.target).value)"
+    />
+
+    <select class="form-select" style="max-width: 180px;"
+            [value]="almacenId() ?? ''" (change)="onAlmacen($any($event.target).value)">
+      <option value="">Todos los almacenes</option>
+      <option *ngFor="let a of almacenes()" [value]="a.id">{{ a.nombre }}</option>
+    </select>
+
+    <div class="form-check form-switch d-flex align-items-center gap-2 ms-1">
+      <input class="form-check-input" type="checkbox" role="switch" id="stockBajoSwitch"
+             [checked]="stockBajo()" (change)="onStockBajo($any($event.target).checked)" />
+      <label class="form-check-label" for="stockBajoSwitch">Stock bajo</label>
+    </div>
+
+    <select class="form-select" style="max-width: 100px;"
+            [value]="pageSize()" (change)="onPageSize($any($event.target).value)">
+      <option [value]="10">10</option>
+      <option [value]="25">25</option>
+      <option [value]="50">50</option>
+      <option [value]="100">100</option>
+    </select>
+
+    <div class="crud-pagination">
+      <button type="button" class="btn btn-outline-secondary" (click)="prevPage()" [disabled]="page() <= 1">
+        Anterior
+      </button>
+      <span class="crud-pageinfo">Página {{ page() }} / {{ lastPage() }}</span>
+      <button type="button" class="btn btn-outline-secondary" (click)="nextPage()" [disabled]="page() >= lastPage()">
+        Siguiente
+      </button>
+    </div>
+  </div>
+
+  <!-- Grid -->
+  <div class="crud-grid">
+    <ag-grid-angular
+      class="ag-theme-alpine"
+      [theme]="'legacy'"
+      style="width: 100%; height: 560px;"
+      [rowData]="rows()"
+      [columnDefs]="colDefs"
+      [defaultColDef]="defaultColDef"
+      [animateRows]="true"
+      [overlayNoRowsTemplate]="overlayNoRowsTemplate"
+      [overlayLoadingTemplate]="overlayLoadingTemplate"
+      (gridReady)="onGridReady($event)"
+    ></ag-grid-angular>
+  </div>
+
+</div>

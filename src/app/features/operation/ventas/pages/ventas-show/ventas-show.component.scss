@@ -1,0 +1,195 @@
+// ── Variables ──────────────────────────────────────────────
+$ticket-font: 'Courier New', Courier, monospace;
+$ticket-width: 320px;   // ancho en pantalla (aprox 80mm a 96dpi)
+$font-size-base: 13px;
+
+// ── Wrapper en pantalla ────────────────────────────────────
+.ticket-wrapper {
+  display: flex;
+  justify-content: center;
+}
+
+// ── Ticket base ────────────────────────────────────────────
+.ticket {
+  width: $ticket-width;
+  font-family: $ticket-font;
+  font-size: $font-size-base;
+  color: #111;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 16px 14px;
+  box-shadow: 2px 2px 8px rgba(0,0,0,.12);
+
+  // ── Encabezado ──
+  .ticket-header {
+    text-align: center;
+    margin-bottom: 6px;
+
+    .store-name {
+      font-size: 15px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .store-sub {
+      font-size: 11px;
+      color: #555;
+    }
+  }
+
+  // ── Separadores ──
+  .ticket-sep {
+    border-top: 1px dashed #888;
+    margin: 6px 0;
+  }
+
+  .ticket-sep-thin {
+    border-top: 1px solid #aaa;
+    margin: 3px 0;
+  }
+
+  // ── Filas de datos ──
+  .ticket-row {
+    display: flex;
+    gap: 4px;
+    font-size: 12px;
+    line-height: 1.55;
+
+    .label {
+      min-width: 90px;
+      font-weight: bold;
+    }
+  }
+
+  // ── Tabla de artículos ──
+  .ticket-items-header,
+  .ticket-item {
+    display: grid;
+    grid-template-columns: 1fr 42px 54px 54px;
+    font-size: 11px;
+    line-height: 1.6;
+
+    .item-qty,
+    .item-price,
+    .item-sub { text-align: right; }
+  }
+
+  .ticket-items-header {
+    font-weight: bold;
+    font-size: 11px;
+  }
+
+  .ticket-item + .ticket-item {
+    border-top: 1px dotted #ddd;
+    padding-top: 2px;
+  }
+
+  .ticket-empty {
+    font-size: 11px;
+    color: #888;
+    text-align: center;
+    padding: 4px 0;
+  }
+
+  // ── Totales ──
+  .ticket-total-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .total-final {
+    font-weight: bold;
+    font-size: 15px;
+    margin-top: 2px;
+  }
+
+  // ── Pie ──
+  .ticket-footer {
+    text-align: center;
+    font-size: 11px;
+    color: #555;
+    margin-top: 2px;
+  }
+}
+
+
+// ── IMPRESIÓN ─────────────────────────────────────────────
+@media print {
+
+  @page {
+    size: 80mm auto;   // papel POS 80mm, altura automática
+    margin: 4mm 2mm;
+  }
+
+  // Ocultar elementos de UI
+  .no-print {
+    display: none !important;
+  }
+
+  // Quitar márgenes generales del body
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  .page-wrapper {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .ticket-wrapper {
+    display: block;
+  }
+
+  // Ticket en impresión: fuente más pequeña, sin decoración
+  .ticket {
+    width: 100% !important;
+    max-width: 76mm !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    font-size: 9pt !important;
+    color: #000 !important;
+
+    .ticket-header {
+      .store-name { font-size: 11pt !important; }
+      .store-sub  { font-size: 8pt !important; color: #000 !important; }
+    }
+
+    .ticket-sep {
+      border-top: 1px dashed #000 !important;
+    }
+
+    .ticket-sep-thin {
+      border-top: 1px solid #000 !important;
+    }
+
+    .ticket-row {
+      font-size: 8pt !important;
+      .label { min-width: 72pt; }
+    }
+
+    .ticket-items-header,
+    .ticket-item {
+      font-size: 8pt !important;
+      grid-template-columns: 1fr 30pt 38pt 38pt !important;
+    }
+
+    .ticket-total-row { font-size: 8pt !important; }
+
+    .total-final { font-size: 11pt !important; }
+
+    .ticket-footer {
+      font-size: 8pt !important;
+      color: #000 !important;
+    }
+  }
+}

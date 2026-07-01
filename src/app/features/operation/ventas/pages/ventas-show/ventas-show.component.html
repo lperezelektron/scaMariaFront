@@ -1,0 +1,110 @@
+<div class="page-wrapper mx-auto" style="max-width:680px">
+
+  <!-- Toolbar (oculto al imprimir) -->
+  <div class="d-flex gap-2 flex-wrap mb-3 no-print">
+    <button type="button" class="btn btn-outline-secondary" (click)="volver()">
+      ← Regresar
+    </button>
+    <button type="button" class="btn btn-outline-primary" (click)="imprimir()"
+            [disabled]="loading() || !venta()">
+      🖨 Imprimir ticket
+    </button>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="banner() as b" class="alert alert-danger no-print">
+    {{ b.text }}
+  </div>
+
+  <!-- Cargando -->
+  <div *ngIf="loading()" class="text-center py-5 no-print">
+    <c-spinner></c-spinner>
+  </div>
+
+  <!-- ── TICKET ── -->
+  <div *ngIf="!loading() && venta() as v" class="ticket-wrapper">
+    <div class="ticket">
+
+      <!-- Encabezado -->
+      <div class="ticket-header">
+        <div class="store-name">{{ v.almacen?.descripcion }}</div>
+        <div class="store-sub" *ngIf="v.almacen?.direccion">{{ v.almacen?.direccion }}</div>
+        <div class="store-sub" *ngIf="v.almacen?.ciudad">{{ v.almacen?.ciudad }}</div>
+        <div class="store-sub" *ngIf="v.almacen?.telefono">Tel: {{ v.almacen?.telefono }}</div>
+      </div>
+
+      <div class="ticket-sep"></div>
+
+      <!-- Datos de la venta -->
+      <div class="ticket-row">
+        <span class="label">Ticket #:</span>
+        <span>{{ v.id }}</span>
+      </div>
+      <div class="ticket-row">
+        <span class="label">Fecha:</span>
+        <span>{{ v.fecha | date:'dd/MMM/yyyy' }}</span>
+      </div>
+      <div class="ticket-row">
+        <span class="label">Cliente:</span>
+        <span>{{ v.cliente?.nombre || ('ID ' + v.cliente_id) }}</span>
+      </div>
+      <div class="ticket-row">
+        <span class="label">Forma pago:</span>
+        <span>{{ v.forma_pago?.descripcion || '-' }}</span>
+      </div>
+      <div class="ticket-row" *ngIf="v.user">
+        <span class="label">Atendió:</span>
+        <span>{{ v.user!.name }}</span>
+      </div>
+
+      <div class="ticket-sep"></div>
+
+      <!-- Encabezado de artículos -->
+      <div class="ticket-items-header">
+        <span class="item-name">Artículo</span>
+        <span class="item-qty">Cant</span>
+        <span class="item-price">P/U</span>
+        <span class="item-sub">Total</span>
+      </div>
+      <div class="ticket-sep-thin"></div>
+
+      <!-- Artículos -->
+      <ng-container *ngIf="v.detalles?.length; else sinDetalle">
+        <div class="ticket-item" *ngFor="let d of v.detalles">
+          <span class="item-name">{{ d.articulo?.nombre_corto }} {{ d.lote?.variedad }}</span>
+          <span class="item-qty">{{ d.cantidad | number:'1.0-3' }}</span>
+          <span class="item-price">{{ d.precio | number:'1.2-2' }}</span>
+          <span class="item-sub">{{ subtotalDetalle(d.cantidad, d.precio) | number:'1.2-2' }}</span>
+        </div>
+      </ng-container>
+      <ng-template #sinDetalle>
+        <div class="ticket-empty">Sin detalle de artículos.</div>
+      </ng-template>
+
+      <div class="ticket-sep"></div>
+
+      <!-- Totales -->
+      <div class="ticket-total-row">
+        <span>Subtotal</span>
+        <span>{{ v.subtotal | number:'1.2-2' }}</span>
+      </div>
+      <div class="ticket-total-row" *ngIf="v.impuestos">
+        <span>Impuestos</span>
+        <span>{{ v.impuestos | number:'1.2-2' }}</span>
+      </div>
+      <div class="ticket-total-row total-final">
+        <span>TOTAL</span>
+        <span>{{ v.total | number:'1.2-2' }}</span>
+      </div>
+
+      <div class="ticket-sep"></div>
+
+      <!-- Pie -->
+      <div class="ticket-footer">
+        ¡Gracias por su compra!
+      </div>
+
+    </div>
+  </div>
+
+</div>

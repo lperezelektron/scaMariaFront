@@ -1,0 +1,168 @@
+<div class="form-page">
+
+  <div class="form-header">
+    <div>
+      <h2 class="mb-1">{{ title }}</h2>
+      <small class="text-muted">Catálogo / Artículos</small>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-outline-secondary" (click)="cancel()" [disabled]="saving()">
+        Cancelar
+      </button>
+      <button type="button" class="btn btn-primary" (click)="submit()" [disabled]="saving()">
+        {{ saving() ? 'Guardando...' : 'Guardar' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="card-like" *ngIf="!loading(); else loadingTpl">
+    <form (ngSubmit)="submit()" [formGroup]="form" class="row g-3">
+
+      <div class="col-12 col-md-6">
+        <label class="form-label">Nombre</label>
+        <input class="form-control" formControlName="nombre" [class.is-invalid]="isInvalid('nombre')" (input)="clearBackendError('nombre')" />
+        <div class="invalid-hint" *ngIf="hasError('nombre')">{{ errorText('nombre') }}</div>
+        <div class="invalid-hint" *ngIf="backendError('nombre')">{{ backendError('nombre') }}</div>
+      </div>
+
+      <div class="col-12 col-md-6">
+        <label class="form-label">Nombre corto</label>
+        <input class="form-control" formControlName="nombre_corto" [class.is-invalid]="isInvalid('nombre_corto')" (input)="clearBackendError('nombre_corto')" />
+        <div class="invalid-hint" *ngIf="hasError('nombre_corto')">{{ errorText('nombre_corto') }}</div>
+        <div class="invalid-hint" *ngIf="backendError('nombre_corto')">{{ backendError('nombre_corto') }}</div>
+      </div>
+
+      <div class="col-12 col-md-4">
+        <label class="form-label">Unidad</label>
+        <input class="form-control" formControlName="unidad" maxlength="5" [class.is-invalid]="isInvalid('unidad')" (input)="clearBackendError('unidad')" />
+        <div class="invalid-hint" *ngIf="hasError('unidad')">{{ errorText('unidad') }}</div>
+        <div class="invalid-hint" *ngIf="backendError('unidad')">{{ backendError('unidad') }}</div>
+      </div>
+
+      <div class="col-12 col-md-3">
+        <label class="form-label">Unidades mayoreo</label>
+        <input type="number" class="form-control" formControlName="unidades_mayoreo" min="0.001" step="0.01"
+          placeholder="Opcional" [class.is-invalid]="isInvalid('unidades_mayoreo')"
+          (input)="clearBackendError('unidades_mayoreo')" />
+        <div class="invalid-hint" *ngIf="hasError('unidades_mayoreo')">Debe ser mayor a 0.</div>
+        <div class="invalid-hint" *ngIf="backendError('unidades_mayoreo')">{{ backendError('unidades_mayoreo') }}</div>
+      </div>
+
+      <div class="col-12 col-md-2">
+        <label class="form-label">Orden</label>
+        <input type="number" class="form-control" formControlName="orden" min="0" [class.is-invalid]="isInvalid('orden')" (input)="clearBackendError('orden')" />
+        <div class="invalid-hint" *ngIf="backendError('orden')">{{ backendError('orden') }}</div>
+      </div>
+
+      <div class="col-12 col-md-6">
+        <label class="form-label">Categoría</label>
+        <select class="form-select" formControlName="categoria_id" [class.is-invalid]="isInvalid('categoria_id')" (input)="clearBackendError('categoria_id')">
+          <option [ngValue]="null">Selecciona...</option>
+          <option *ngFor="let c of categorias()" [ngValue]="c.id">{{ c.descripcion }}</option>
+        </select>
+        <div class="invalid-hint" *ngIf="hasError('categoria_id')">Selecciona una categoría.</div>
+        <div class="invalid-hint" *ngIf="backendError('categoria_id')">{{ backendError('categoria_id') }}</div>
+      </div>
+
+      <div class="col-12 col-md-2 d-flex align-items-end">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" formControlName="activo" id="activoSwitch" />
+          <label class="form-check-label" for="activoSwitch">Activo</label>
+        </div>
+      </div>
+
+      <!-- ── Imagen ── -->
+      <div class="col-12 col-md-8">
+        <label class="form-label">Imagen</label>
+
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+          <input type="file" class="form-control" style="max-width: 300px;" accept="image/*" (change)="onImageChange($event)" />
+          <button
+            type="button"
+            class="btn btn-outline-primary btn-sm"
+            (click)="toggleImageSearch()"
+            [class.active]="showImageSearch()"
+          >
+            {{ showImageSearch() ? 'Cerrar búsqueda' : 'Buscar en web' }}
+          </button>
+        </div>
+
+        <!-- panel búsqueda -->
+        <div class="img-search-panel" *ngIf="showImageSearch()">
+
+          <div class="img-search-bar">
+            <input
+              class="form-control form-control-sm"
+              [value]="searchQuery()"
+              (input)="onSearchQueryInput($event)"
+              (keyup.enter)="buscarImagenes()"
+              placeholder="ej: aceite Cristal 1.5 litros"
+            />
+            <button
+              type="button"
+              class="btn btn-primary btn-sm"
+              (click)="buscarImagenes()"
+              [disabled]="searching() || downloadingImage()"
+            >
+              {{ searching() ? 'Buscando...' : 'Buscar' }}
+            </button>
+          </div>
+
+          <div class="img-search-status text-muted" *ngIf="searching()">
+            Buscando imágenes con IA...
+          </div>
+
+          <div class="img-search-status text-muted" *ngIf="downloadingImage()">
+            Descargando imagen...
+          </div>
+
+          <div class="invalid-hint" *ngIf="searchError()">{{ searchError() }}</div>
+
+          <div class="img-results" *ngIf="searchResults().length && !searching()">
+            <div
+              class="img-result-card"
+              *ngFor="let img of searchResults()"
+              (click)="seleccionarImagenUrl(img.url)"
+              [title]="img.title"
+            >
+              <img [src]="img.url" [alt]="img.title" (error)="onSearchImgError($event)" />
+              <span class="img-result-card__label">{{ img.title }}</span>
+            </div>
+          </div>
+
+        </div>
+        <!-- /panel búsqueda -->
+
+        <!-- preview -->
+        <div *ngIf="imagenPreview() as preview" class="mt-2">
+          <img [src]="preview" alt="Vista previa" style="max-height: 120px; border-radius: 4px;" />
+        </div>
+        <div *ngIf="!imagenPreview() && imagenActual() as actual" class="mt-2">
+          <img [src]="actual" alt="Imagen actual" style="max-height: 120px; border-radius: 4px;" />
+        </div>
+
+        <div class="invalid-hint" *ngIf="backendError('imagen')">{{ backendError('imagen') }}</div>
+      </div>
+
+      <div class="col-12">
+        <hr class="my-2" />
+        <div class="d-flex gap-2 justify-content-end">
+          <button type="button" class="btn btn-outline-secondary" (click)="cancel()" [disabled]="saving()">
+            Cancelar
+          </button>
+          <button type="submit" class="btn btn-primary" [disabled]="saving()">
+            {{ saving() ? 'Guardando...' : 'Guardar' }}
+          </button>
+        </div>
+      </div>
+
+    </form>
+  </div>
+
+  <ng-template #loadingTpl>
+    <div class="card-like">
+      <div class="py-4 text-center text-muted">Cargando...</div>
+    </div>
+  </ng-template>
+</div>

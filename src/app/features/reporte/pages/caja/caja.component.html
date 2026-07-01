@@ -1,0 +1,238 @@
+<div class="crud-page">
+
+  <div class="crud-header">
+    <div class="crud-title">
+      <h2>Caja</h2>
+      <small>Movimientos sin cerrar</small>
+    </div>
+    <div class="crud-actions">
+      <button type="button" class="btn btn-outline-secondary" (click)="irACortes()" *hasPermission="'caja.corte'">
+        Historial de cortes
+      </button>
+      <button type="button" class="btn btn-outline-secondary" (click)="reload()">
+        Refrescar
+      </button>
+      <button type="button" class="btn btn-primary" (click)="openModal()" *hasPermission="'caja.movimiento'">
+        + Movimiento
+      </button>
+      <button type="button" class="btn btn-outline-warning" (click)="openCorteModal()"
+              [disabled]="!rows().length" *hasPermission="'caja.corte'">
+        Corte de caja
+      </button>
+    </div>
+  </div>
+
+  <!-- Banner -->
+  <div *ngIf="banner() as b" class="alert" [class.alert-danger]="b.type === 'danger'"
+    [class.alert-success]="b.type === 'success'">
+    {{ b.text }}
+  </div>
+
+  <!-- Selector de almacén (solo si el usuario no tiene uno asignado) -->
+  <div *ngIf="!almacenFijo()" class="d-flex align-items-center gap-2 mb-3">
+    <label class="form-label mb-0 fw-semibold text-nowrap">Almacén:</label>
+    <select class="form-select" style="max-width: 280px;" [value]="almacenId() ?? ''"
+      (change)="onAlmacen($any($event.target).value)">
+      <option value="">— Selecciona un almacén —</option>
+      <option *ngFor="let a of almacenes()" [value]="a.id">{{ a.descripcion }}</option>
+    </select>
+  </div>
+
+  <!-- Sin almacén seleccionado -->
+  <div *ngIf="almacenId() === null" class="text-center text-muted py-5">
+    Selecciona un almacén para ver los movimientos de caja.
+  </div>
+
+  <!-- Contenido (sólo cuando hay almacén seleccionado) -->
+  <ng-container *ngIf="almacenId() !== null">
+
+    <!-- Tarjetas de resumen -->
+    <div class="row g-3 mb-2">
+      <div class="col-12 col-sm-4">
+        <div class="card text-center">
+          <div class="card-body py-3">
+            <div class="text-muted small mb-1">Saldo actual</div>
+            <div class="fs-4 fw-bold text-primary">${{ saldoActual() | number:'1.2-2' }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-sm-4">
+        <div class="card text-center">
+          <div class="card-body py-3">
+            <div class="text-muted small mb-1">Entradas</div>
+            <div class="fs-4 fw-bold text-success">${{ totalEntradas() | number:'1.2-2' }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-sm-4">
+        <div class="card text-center">
+          <div class="card-body py-3">
+            <div class="text-muted small mb-1">Salidas</div>
+            <div class="fs-4 fw-bold text-danger">${{ totalSalidas() | number:'1.2-2' }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toolbar de filtros -->
+    <div class="crud-toolbar">
+      <input type="date" class="form-control" style="max-width: 180px;" [value]="fecha()"
+        (change)="onFecha($any($event.target).value)" />
+
+      <select class="form-select" style="max-width: 160px;" [value]="tipoFilter()"
+        (change)="onTipo($any($event.target).value)">
+        <option value="">Todos los tipos</option>
+        <option value="entrada">Entrada</option>
+        <option value="salida">Salida</option>
+      </select>
+
+      <button type="button" class="btn btn-outline-secondary" (click)="limpiarFiltros()"
+        [disabled]="!fecha() && !tipoFilter()">
+        Limpiar filtros
+      </button>
+    </div>
+
+    <!-- Grid -->
+    <div class="crud-grid">
+      <ag-grid-angular class="ag-theme-alpine" [theme]="'legacy'" style="width: 100%; height: 520px;" [rowData]="rows()"
+        [columnDefs]="colDefs" [defaultColDef]="defaultColDef" [animateRows]="true"
+        [overlayNoRowsTemplate]="overlayNoRowsTemplate" [overlayLoadingTemplate]="overlayLoadingTemplate"
+        (gridReady)="onGridReady($event)"></ag-grid-angular>
+    </div>
+
+  </ng-container>
+
+</div>
+
+<!-- ── Modal: corte de caja ── -->
+<c-modal [visible]="corteModalVisible()" (visibleChange)="corteModalVisible.set($event)">
+  <c-modal-header>
+    <h5 class="modal-title">Corte de caja</h5>
+  </c-modal-header>
+
+  <c-modal-body>
+
+    <!-- Resultado exitoso -->
+    <ng-container *ngIf="corteResultado() as r">
+      <div class="text-center py-2">
+        <div class="fs-1 mb-2">✅</div>
+        <p class="fw-semibold mb-1">Corte #{{ r.id }} realizado</p>
+        <p class="text-medium-emphasis mb-1">Los movimientos han sido cerrados.</p>
+        <p class="fs-5 fw-bold mt-3">
+          Importe del corte:
+          <span [class.text-success]="r.importe >= 0" [class.text-danger]="r.importe < 0">
+            ${{ r.importe | number:'1.2-2' }}
+          </span>
+        </p>
+      </div>
+    </ng-container>
+
+    <!-- Confirmación -->
+    <ng-container *ngIf="!corteResultado()">
+      <p>Se cerrarán <strong>{{ rows().length }}</strong> movimiento{{ rows().length !== 1 ? 's' : '' }} pendientes.</p>
+      <div class="d-flex justify-content-between text-medium-emphasis small mt-2">
+        <span>Entradas: <strong class="text-success">${{ totalEntradas() | number:'1.2-2' }}</strong></span>
+        <span>Salidas: <strong class="text-danger">${{ totalSalidas() | number:'1.2-2' }}</strong></span>
+        <span>Saldo: <strong class="text-primary">${{ saldoActual() | number:'1.2-2' }}</strong></span>
+      </div>
+      <div class="alert alert-warning mt-3 mb-0 small">
+        Esta acción no se puede deshacer.
+      </div>
+    </ng-container>
+
+  </c-modal-body>
+
+  <c-modal-footer>
+    <ng-container *ngIf="corteResultado(); else confirmButtons">
+      <button cButton color="primary" (click)="closeCorteModal()">Cerrar</button>
+    </ng-container>
+    <ng-template #confirmButtons>
+      <button cButton color="secondary" variant="outline" (click)="closeCorteModal()" [disabled]="cortando()">
+        Cancelar
+      </button>
+      <button cButton color="warning" (click)="confirmarCorte()" [disabled]="cortando()">
+        {{ cortando() ? 'Procesando...' : 'Confirmar corte' }}
+      </button>
+    </ng-template>
+  </c-modal-footer>
+</c-modal>
+
+<!-- ── Modal: registrar movimiento ── -->
+<c-modal [visible]="modalVisible()" (visibleChange)="modalVisible.set($event)">
+  <c-modal-header>
+    <h5 class="modal-title">Registrar movimiento de caja</h5>
+  </c-modal-header>
+
+  <c-modal-body>
+    <form [formGroup]="movimientoForm" class="d-flex flex-column gap-3">
+
+      <!-- Tipo -->
+      <div>
+        <label class="form-label">Tipo de movimiento</label>
+        <div class="d-flex gap-4 mt-1">
+          <div class="form-check">
+            <input class="form-check-input" type="radio" id="tipoEntrada" formControlName="tipo" value="Entrada" />
+            <label class="form-check-label fw-semibold text-success" for="tipoEntrada">
+              Entrada
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" id="tipoSalida" formControlName="tipo" value="Salida" />
+            <label class="form-check-label fw-semibold text-danger" for="tipoSalida">
+              Salida
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cantidad -->
+      <div>
+        <label class="form-label">Cantidad</label>
+        <div class="input-group">
+          <span class="input-group-text">$</span>
+          <input type="number" class="form-control" formControlName="cantidad" min="0.01" step="0.01"
+            placeholder="0.00" />
+        </div>
+        <div class="form-text text-danger"
+          *ngIf="movimientoForm.controls.cantidad.invalid && movimientoForm.controls.cantidad.touched">
+          Ingresa una cantidad mayor a cero.
+        </div>
+      </div>
+
+      <!-- Descripción -->
+      <div>
+        <label class="form-label">Descripción</label>
+        <input type="text" class="form-control" formControlName="referencia"
+          placeholder="Motivo o referencia del movimiento" maxlength="255" />
+        <div class="form-text text-danger"
+          *ngIf="movimientoForm.controls.referencia.invalid && movimientoForm.controls.referencia.touched">
+          La descripción es requerida.
+        </div>
+      </div>
+
+      <!-- Almacén -->
+      <div *ngIf="almacenes().length">
+        <label class="form-label">Almacén <span class="text-muted small">(opcional)</span></label>
+        <select class="form-select" formControlName="almacen_id">
+          <option [ngValue]="null">— Sin almacén —</option>
+          <option *ngFor="let a of almacenes()" [ngValue]="a.id">{{ a.descripcion }}</option>
+        </select>
+      </div>
+
+    </form>
+  </c-modal-body>
+
+  <c-modal-footer>
+    <button cButton color="secondary" variant="outline" (click)="closeModal()" [disabled]="saving()">
+      Cancelar
+    </button>
+    <button cButton [color]="movimientoForm.controls.tipo.value === 'Entrada' ? 'success' : 'danger'"
+      (click)="confirmarMovimiento()" [disabled]="movimientoForm.invalid || saving()">
+      {{ saving()
+      ? 'Guardando...'
+      : (movimientoForm.controls.tipo.value === 'Entrada'
+      ? 'Registrar entrada'
+      : 'Registrar salida') }}
+    </button>
+  </c-modal-footer>
+</c-modal>

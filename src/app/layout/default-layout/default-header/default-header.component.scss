@@ -1,0 +1,158 @@
+// Contenedor con scroll horizontal
+.nav-chips-container {
+  flex: 1;
+  max-width: calc(100% - 200px); // Dejar espacio para los iconos de la derecha
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin: 0 1rem;
+  
+  // Ocultar scrollbar pero mantener funcionalidad
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--cui-emphasis-color-rgb), 0.2) transparent;
+  
+  &::-webkit-scrollbar {
+    height: 4px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: rgba(var(--cui-emphasis-color-rgb), 0.2);
+    border-radius: 2px;
+    
+    &:hover {
+      background: rgba(var(--cui-emphasis-color-rgb), 0.3);
+    }
+  }
+  
+  c-header-nav {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    min-width: min-content;
+  }
+}
+
+// Asegurar que el container principal sea flex
+:host ::ng-deep c-container.border-bottom {
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+}
+
+// Avatar con iniciales estilo Gmail - con mayor especificidad
+:host ::ng-deep .user-avatar,
+.user-avatar {
+  width: 2rem !important;
+  height: 2rem !important;
+  border-radius: 50% !important;
+  background: #28a745 !important;
+  color: white !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 0.875rem !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  
+  &:hover {
+    transform: scale(1.05) !important;
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.4) !important;
+    background: #218838 !important;
+  }
+}
+
+// Chips de navegación
+.nav-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 0.375rem 0.75rem !important;
+  background: rgba(var(--cui-emphasis-color-rgb), 0.08) !important;
+  border: 1px solid rgba(var(--cui-emphasis-color-rgb), 0.15) !important;
+  border-radius: 1rem !important;
+  color: var(--cui-body-color) !important;
+  text-decoration: none !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+  white-space: nowrap !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  
+  &:hover {
+    background: rgba(var(--cui-emphasis-color-rgb), 0.12) !important;
+    border-color: rgba(var(--cui-emphasis-color-rgb), 0.25) !important;
+    color: var(--cui-body-color) !important;
+    text-decoration: none !important;
+  }
+  
+  &.nav-chip-active {
+    background: rgba(var(--cui-primary-rgb), 0.15) !important;
+    border-color: rgb(var(--cui-primary-rgb)) !important;
+    color: rgb(var(--cui-primary-rgb)) !important;
+    font-weight: 600 !important;
+  }
+}
+
+// Chip con botón de cerrar
+.nav-chip-wrapper {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  flex-shrink: 0 !important;
+  
+  .nav-chip-closable {
+    padding-right: 1.75rem !important;
+  }
+  
+  .nav-chip-close {
+    position: absolute !important;
+    right: 0.4rem !important;
+    top: 50% !important;
+    transform: translateY(-50%) scale(0.6) !important;
+    width: 0.5rem !important;
+    height: 0.5rem !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    opacity: 0 !important;
+    transition: all 0.15s ease !important;
+    font-size: 0.5rem !important;
+    background-size: 0.5rem !important;
+    
+    &:hover {
+      opacity: 1 !important;
+      transform: translateY(-50%) scale(0.7) !important;
+    }
+    
+    &:focus {
+      opacity: 1 !important;
+      box-shadow: none !important;
+    }
+  }
+  
+  &:hover .nav-chip-close {
+    opacity: 0.7 !important;
+  }
+  
+  &:has(.nav-chip-active) .nav-chip-close {
+    opacity: 0.8 !important;
+  }
+}
+
+// Separador
+.nav-separator {
+  height: 1.5rem !important;
+  width: 1px !important;
+  background: rgba(var(--cui-emphasis-color-rgb), 0.2) !important;
+  margin: 0 0.25rem !important;
+  flex-shrink: 0 !important;
+}
+
+// Ajustar el header nav
+c-header-nav {
+  &.gap-2 {
+    gap: 0.5rem !important;
+  }
+}

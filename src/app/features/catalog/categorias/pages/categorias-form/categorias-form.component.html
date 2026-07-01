@@ -1,0 +1,49 @@
+<div class="form-page">
+
+  <div class="form-header">
+    <div>
+      <h2 class="m-0">{{ title }}</h2>
+      <small class="text-muted">Catálogo</small>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-outline-secondary" (click)="cancel()" [disabled]="saving()">
+        Cancelar
+      </button>
+      <button type="button" class="btn btn-primary" (click)="submit()" [disabled]="saving()">
+        {{ saving() ? 'Guardando...' : 'Guardar' }}
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="loading()" class="alert alert-info">Cargando...</div>
+
+  <form *ngIf="!loading()" [formGroup]="form" class="card form-card" (ngSubmit)="submit()">
+    <div class="card-body">
+      <div class="row g-3">
+
+        <div class="col-12 col-lg-8">
+          <label class="form-label">Descripción</label>
+          <input
+            class="form-control"
+            formControlName="descripcion"
+            [class.is-invalid]="isInvalid('descripcion')"
+            (input)="clearBackendError('descripcion')"
+            maxlength="50"
+          />
+          <div class="invalid-feedback" *ngIf="errorText('descripcion')">{{ errorText('descripcion') }}</div>
+          <div class="invalid-feedback" *ngIf="backendError('descripcion')">{{ backendError('descripcion') }}</div>
+        </div>
+
+        <div class="col-12 col-lg-4 d-flex align-items-end">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" formControlName="activo" />
+            <label class="form-check-label">Activo</label>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </form>
+
+</div>
